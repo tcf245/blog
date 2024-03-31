@@ -1,12 +1,12 @@
 export const THEME_CONFIG: App.Locals['config'] = {
   /** blog title */
-  title: "活版印字",
+  title: "个人空间",
   /** your name */
-  author: "Typography",
+  author: "<Eric's Blog>",
   /** website description */
   desc: "Rediscory the beauty of typography",
   /** your deployed domain */
-  website: "https://astro-theme-typography.vercel.app/",
+  website: "https://cyanbean.online/",
   /** your locale */
   locale: "en-us",
   /** theme style */
@@ -15,19 +15,19 @@ export const THEME_CONFIG: App.Locals['config'] = {
   socials: [
     {
       name: "github",
-      href: "https://github.com/moeyua/astro-theme-typography",
+      href: "https://github.com/tcf245",
     },
-    {
-      name: "rss",
-      href: "/atom.xml",
-    },
+    // {
+    //   name: "rss",
+    //   href: "/atom.xml",
+    // },
     {
       name: "twitter",
-      href: "https://github.com/moeyua/astro-theme-typography",
+      href: "https://twitter.com/8ac06af466f94ab",
     },
     {
-      name: "mastodon",
-      href: "https://github.com/moeyua/astro-theme-typography",
+      name: "linkedin",
+      href: "https://www.linkedin.com/in/eric-tan-498580b8/",
     }
   ],
   /** your header info */
