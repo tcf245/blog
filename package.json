@@ -22,7 +22,7 @@
     "vite": "^5.0.12"
   },
   "devDependencies": {
-    "@iconify-json/mdi": "^1.1.64",
+    "@iconify-json/mdi": "^1.1.66",
     "@types/markdown-it": "^13.0.7",
     "@types/node": "^20.14.0",
     "@types/sanitize-html": "^2.9.5",
