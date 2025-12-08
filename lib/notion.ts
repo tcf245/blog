@@ -26,6 +26,7 @@ export interface Post {
     slug: string;
     tags: string[];
     lang: string;
+    preview: string;
 }
 
 export const getDatabase = async (): Promise<Post[]> => {
@@ -43,20 +44,31 @@ export const getDatabase = async (): Promise<Post[]> => {
 
     try {
         const formattedId = formatUUID(databaseId.replace(/-/g, ""));
-        const response = await notion.request({
-            path: `databases/${formattedId}/query`,
-            method: "post",
-            body: {
-                filter: {
-                    property: "Published",
-                    checkbox: { equals: true },
-                },
-                sorts: [{ property: "Date", direction: "descending" }],
+        const response = await notion.databases.query({
+            database_id: formattedId,
+            filter: {
+                property: "Published",
+                checkbox: { equals: true },
             },
-        }) as any;
+            sorts: [{ property: "Date", direction: "descending" }],
+        });
 
-        return response.results.map((page: any) => {
+        const posts = await Promise.all(response.results.map(async (page: any) => {
             const props = page.properties;
+            const pageId = page.id;
+
+            const content = await notion.blocks.children.list({
+                block_id: pageId,
+                page_size: 3, // Fetch first 3 blocks for preview
+            });
+
+            const preview = content.results.map((block: any) => {
+                if (block.type === 'paragraph') {
+                    return block.paragraph.rich_text.map((t: any) => t.plain_text).join('');
+                }
+                return '';
+            }).join(' ').slice(0, 200) + '...';
+
             return {
                 id: page.id,
                 title: props.Name?.title?.[0]?.plain_text || "Untitled",
@@ -64,8 +76,11 @@ export const getDatabase = async (): Promise<Post[]> => {
                 slug: props.Slug?.rich_text?.[0]?.plain_text || "",
                 tags: props.Tags?.multi_select?.map((tag: any) => tag.name) || [],
                 lang: props.Lang?.select?.name || "en",
+                preview: preview,
             };
-        });
+        }));
+
+        return posts;
     } catch (error) {
         console.error("Failed to query Notion database. Check your ID and Token.", error);
         return [];
@@ -84,29 +99,40 @@ export const getPostBySlug = async (slug: string): Promise<Post | null> => {
 
     try {
         const formattedId = formatUUID(databaseId.replace(/-/g, ""));
-        const response = await notion.request({
-            path: `databases/${formattedId}/query`,
-            method: "post",
-            body: {
-                filter: {
-                    and: [
-                        {
-                            property: "Published",
-                            checkbox: { equals: true },
-                        },
-                        {
-                            property: "Slug",
-                            rich_text: { equals: slug },
-                        },
-                    ],
-                },
+        const response = await notion.databases.query({
+            database_id: formattedId,
+            filter: {
+                and: [
+                    {
+                        property: "Published",
+                        checkbox: { equals: true },
+                    },
+                    {
+                        property: "Slug",
+                        rich_text: { equals: slug },
+                    },
+                ],
             },
-        }) as any;
+        });
 
         if (response.results.length === 0) return null;
 
         const page: any = response.results[0];
         const props = page.properties;
+        const pageId = page.id;
+
+        const content = await notion.blocks.children.list({
+            block_id: pageId,
+            page_size: 3, // Fetch first 3 blocks for preview
+        });
+
+        const preview = content.results.map((block: any) => {
+            if (block.type === 'paragraph') {
+                return block.paragraph.rich_text.map((t: any) => t.plain_text).join('');
+            }
+            return '';
+        }).join(' ').slice(0, 200) + '...';
+
         return {
             id: page.id,
             title: props.Name?.title?.[0]?.plain_text || "Untitled",
@@ -114,6 +140,7 @@ export const getPostBySlug = async (slug: string): Promise<Post | null> => {
             slug: props.Slug?.rich_text?.[0]?.plain_text || "",
             tags: props.Tags?.multi_select?.map((tag: any) => tag.name) || [],
             lang: props.Lang?.select?.name || "en",
+            preview: preview,
         };
     } catch (error) {
         console.error(`Failed to fetch post by slug ${slug}.`, error);
@@ -122,5 +149,5 @@ export const getPostBySlug = async (slug: string): Promise<Post | null> => {
 };
 
 export const getPageContent = async (pageId: string) => {
-    return await notionAPI.getPage(pageId);
+    return await notionAPI.getPage(formatUUID(pageId));
 };

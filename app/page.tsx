@@ -1,41 +1,43 @@
-import Link from "next/link";
 import { getDatabase } from "@/lib/notion";
-
-// Revalidate every hour
-export const revalidate = 3600;
+import Link from "next/link";
 
 export default async function Home() {
-  const posts = await getDatabase();
+    const posts = await getDatabase();
 
-  return (
-    <main className="max-w-2xl mx-auto px-6 py-20 bg-[#FBFBFA] min-h-screen">
-      <header className="mb-24">
-        <h1 className="text-3xl font-bold text-[#1E1E1E]">My Blog</h1>
-        <p className="text-neutral-500 mt-2">Minimalist thoughts on design and tech.</p>
-      </header>
+    return (
+        <main className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24">
+            <header className="mb-20">
+                <div className="flex justify-between items-center">
+                    <h1 className="text-2xl font-semibold text-[#2C2C2A]">
+                        <Link href="/" className="hover:text-neutral-700 transition-colors">My Blog</Link>
+                    </h1>
+                </div>
+            </header>
 
-      <section className="space-y-20">
-        {posts.map((post) => (
-          <Link href={`/${post.slug}`} key={post.id} className="block group">
-            <article className="cursor-pointer">
-              {/* Date & Tag */}
-              <div className="flex items-center gap-3 text-xs font-mono text-neutral-400 mb-3">
-                <time>{post.date}</time>
-                <span className="w-px h-3 bg-neutral-300"></span>
-                <span className="uppercase tracking-wider">{post.tags.join(", ")}</span>
-              </div>
-              {/* Title */}
-              <h2 className="text-2xl font-bold text-[#2C2C2A] group-hover:text-neutral-600 transition-colors">
-                {post.title}
-              </h2>
-            </article>
-          </Link>
-        ))}
-
-        {posts.length === 0 && (
-          <p className="text-neutral-400">No published posts found.</p>
-        )}
-      </section>
-    </main>
-  );
+            <div className="space-y-14">
+                {posts.map((post) => (
+                    <Link href={`/${post.slug}`} key={post.id} className="block group">
+                        <article>
+                            <header>
+                                <div className="text-sm text-neutral-500 mb-2">
+                                    <time dateTime={post.date}>{new Date(post.date).toLocaleDateString()}</time>
+                                </div>
+                                <h2 className="text-2xl font-semibold text-[#2C2C2A] mb-3 leading-tight group-hover:text-neutral-700 transition-colors">
+                                    {post.title}
+                                </h2>
+                            </header>
+                            <div className="text-base text-neutral-800 leading-relaxed mb-5">
+                                <p>{post.preview}</p>
+                            </div>
+                            <footer>
+                                <div className="text-base font-medium text-neutral-900 group-hover:underline">
+                                    Read more
+                                </div>
+                            </footer>
+                        </article>
+                    </Link>
+                ))}
+            </div>
+        </main>
+    );
 }

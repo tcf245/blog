@@ -9,11 +9,9 @@
     "lint": "eslint"
   },
   "dependencies": {
-    "@notionhq/client": "^5.4.0",
+    "@notionhq/client": "^2.2.14",
     "next": "16.0.7",
     "notion-client": "^7.7.1",
-    "notion-types": "^7.7.1",
-    "notion-utils": "^7.7.1",
     "react": "19.2.0",
     "react-dom": "19.2.0",
     "react-notion-x": "^7.7.1"
