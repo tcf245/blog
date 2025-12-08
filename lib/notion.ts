@@ -30,11 +30,13 @@ export interface Post {
 }
 
 export const getDatabase = async (): Promise<Post[]> => {
+    console.log("Attempting to get database...");
     const databaseId = process.env.NOTION_DATABASE_ID;
     if (!databaseId) {
-        console.warn("NOTION_DATABASE_ID is not defined");
+        console.warn("NOTION_DATABASE_ID is not defined on Vercel.");
         return [];
     }
+    console.log(`Found NOTION_DATABASE_ID: ${databaseId ? 'Yes' : 'No'}`);
 
     // Basic validation: Database ID should be 32 or 36 characters (hexdash)
     if (!isValidNotionId(databaseId)) {
@@ -52,6 +54,8 @@ export const getDatabase = async (): Promise<Post[]> => {
             },
             sorts: [{ property: "Date", direction: "descending" }],
         });
+
+        console.log(`Found ${response.results.length} posts in database.`);
 
         const posts = await Promise.all(response.results.map(async (page: any) => {
             const props = page.properties;
@@ -82,14 +86,19 @@ export const getDatabase = async (): Promise<Post[]> => {
 
         return posts;
     } catch (error) {
-        console.error("Failed to query Notion database. Check your ID and Token.", error);
+        console.error("Failed to query Notion database on Vercel. Check your ID and Token.", error);
         return [];
     }
 };
 
 export const getPostBySlug = async (slug: string): Promise<Post | null> => {
+    console.log(`Attempting to get post by slug: ${slug}`);
     const databaseId = process.env.NOTION_DATABASE_ID;
-    if (!databaseId) return null;
+    if (!databaseId) {
+        console.warn("NOTION_DATABASE_ID is not defined for getPostBySlug on Vercel.");
+        return null;
+    }
+    console.log(`Found NOTION_DATABASE_ID for getPostBySlug: ${databaseId ? 'Yes' : 'No'}`);
 
     // Basic validation
     if (!isValidNotionId(databaseId)) {
@@ -115,6 +124,7 @@ export const getPostBySlug = async (slug: string): Promise<Post | null> => {
             },
         });
 
+        console.log(`Found ${response.results.length} results for slug: ${slug}`);
         if (response.results.length === 0) return null;
 
         const page: any = response.results[0];
@@ -143,7 +153,7 @@ export const getPostBySlug = async (slug: string): Promise<Post | null> => {
             preview: preview,
         };
     } catch (error) {
-        console.error(`Failed to fetch post by slug ${slug}.`, error);
+        console.error(`Failed to fetch post by slug ${slug} on Vercel.`, error);
         return null;
     }
 };
