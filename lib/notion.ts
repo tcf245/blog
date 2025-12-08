@@ -1,6 +1,8 @@
 import { Client } from "@notionhq/client";
 import { NotionAPI } from "notion-client";
 
+console.log(`[lib/notion.ts] Module loaded. NOTION_TOKEN is ${process.env.NOTION_TOKEN ? 'defined' : 'undefined'}`);
+
 // Official Client for querying Database (SSR/ISR)
 const notion = new Client({ auth: process.env.NOTION_TOKEN });
 
