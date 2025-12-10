@@ -10,15 +10,15 @@ export async function generateStaticParams() {
     }));
 }
 
-// Revalidate every hour
-export const revalidate = 3600;
+// Revalidate every 0 seconds
+export const revalidate = 0;
 
 interface PageProps {
-    params: Promise<{ slug: string }>;
+    params: { slug: string };
 }
 
 export default async function Page({ params }: PageProps) {
-    const { slug } = await params;
+    const { slug } = params;
     const post = await getPostBySlug(slug);
 
     if (!post) {
