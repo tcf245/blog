@@ -1,36 +1,52 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Minimalist Notion Blog
+
+A clean, minimalist blog build with Next.js (App Router), Tailwind CSS, and Notion as the CMS.
+
+## Features
+
+- 🚀 **Next.js 14** App Router
+- 🎨 **Tailwind CSS** for styling
+- 📝 **Notion as CMS** (write posts in Notion, publish automatically)
+- ⚡ **Fast & SEO Friendly** (Server-side rendering / Static generation)
+- 📱 **Responsive Design**
 
 ## Getting Started
 
-First, run the development server:
+### 1. Environment Setup
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+Rename `.env.example` to `.env` (or create one) and add your Notion credentials:
+
+```env
+NOTION_TOKEN=secret_xxxxxxxxxxxxxxxxx
+NOTION_DATABASE_ID=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+- **NOTION_TOKEN**: Your Notion Integration Token (create one at [Notion Developers](https://www.notion.so/my-integrations)).
+- **NOTION_DATABASE_ID**: The ID of your Notion database.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 2. Run Locally
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm install
+npm run dev
+```
 
-## Learn More
+Open [http://localhost:3000](http://localhost:3000) with your browser.
 
-To learn more about Next.js, take a look at the following resources:
+## Deployment on Vercel
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+1. Push your code to a Git repository (GitHub/GitLab/Bitbucket).
+2. Import the project into **Vercel**.
+3. **IMPORTANT**: In the Vercel Project Settings > **Environment Variables**, add:
+   - `NOTION_TOKEN`
+   - `NOTION_DATABASE_ID`
+4. Deploy!
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Troubleshooting Vercel 404s
 
-## Deploy on Vercel
+If your deployed site returns **404** errors (especially on blog post pages or the home page):
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. **Check Environment Variables**: Ensure `NOTION_TOKEN` and `NOTION_DATABASE_ID` are correctly set in Vercel Project Settings.
+2. **Check Notion Permissions**: Ensure your specific Notion Database is **shared** with your Notion Integration (click the `...` menu on the database page -> `Add connections` -> select your integration).
+3. **Check Build Logs**: Look at the Vercel build logs. If the token is missing, the build might succeed but generate empty pages or fail to fetch routes.
+4. **Check Runtime Logs**: If using dynamic rendering, check the "Functions" logs in Vercel dashboard for errors like "API Response Error".
