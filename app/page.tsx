@@ -3,7 +3,6 @@ import Link from "next/link";
 
 // Force static generation for the home page
 export const dynamic = "force-static";
-export const revalidate = 0;
 
 export default async function Home() {
     const posts = await getDatabase();
