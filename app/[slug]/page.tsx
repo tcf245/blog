@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { getPostBySlug, getPageContent, getDatabase } from "@/lib/notion";
 import NotionPage from "@/components/NotionPage";
 
-// ISR: Generate static params for all existing posts
+// Generate static params for existing posts (pre-rendering)
 export async function generateStaticParams() {
     const posts = await getDatabase();
     return posts.map((post) => ({
@@ -10,7 +10,11 @@ export async function generateStaticParams() {
     }));
 }
 
-// Revalidate every 0 seconds
+// Revalidate every 60 seconds
+export const revalidate = 60;
+
+// Allow new pages to be generated on demand (true is default, but explicit is good)
+export const dynamicParams = true;
 
 interface PageProps {
     params: { slug: string };

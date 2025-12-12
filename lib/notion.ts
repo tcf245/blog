@@ -31,6 +31,23 @@ export interface Post {
     preview: string;
 }
 
+// Helper for retry logic with exponential backoff
+const withRetry = async <T>(
+    fn: () => Promise<T>,
+    retries = 3,
+    delay = 1000,
+    apiName = "Notion API"
+): Promise<T> => {
+    try {
+        return await fn();
+    } catch (error) {
+        if (retries === 0) throw error;
+        console.warn(`${apiName} failed. Retrying in ${delay}ms... (${retries} attempts left)`);
+        await new Promise((resolve) => setTimeout(resolve, delay));
+        return withRetry(fn, retries - 1, delay * 2, apiName);
+    }
+};
+
 export const getDatabase = async (): Promise<Post[]> => {
     console.log("Attempting to get database...");
     const databaseId = process.env.NOTION_DATABASE_ID;
@@ -48,14 +65,16 @@ export const getDatabase = async (): Promise<Post[]> => {
 
     try {
         const formattedId = formatUUID(databaseId.replace(/-/g, ""));
-        const response = await notion.databases.query({
+
+        // Retry logic for database query
+        const response = await withRetry(() => notion.databases.query({
             database_id: formattedId,
             filter: {
                 property: "Published",
                 checkbox: { equals: true },
             },
             sorts: [{ property: "Date", direction: "descending" }],
-        });
+        }), 3, 1000, "notion.databases.query");
 
         console.log(`Found ${response.results.length} posts in database.`);
 
@@ -63,10 +82,15 @@ export const getDatabase = async (): Promise<Post[]> => {
             const props = page.properties;
             const pageId = page.id;
 
-            const content = await notion.blocks.children.list({
+            // Retry logic for fetching page content (blocks) for preview
+            const content = await withRetry(() => notion.blocks.children.list({
                 block_id: pageId,
                 page_size: 3, // Fetch first 3 blocks for preview
-            });
+            }), 3, 500, `notion.blocks.children.list (preview for ${pageId})`)
+                .catch(err => {
+                    console.error(`Failed to fetch preview for page ${pageId}`, err);
+                    return { results: [] };
+                });
 
             const preview = content.results.map((block: any) => {
                 if (block.type === 'paragraph') {
@@ -110,7 +134,9 @@ export const getPostBySlug = async (slug: string): Promise<Post | null> => {
 
     try {
         const formattedId = formatUUID(databaseId.replace(/-/g, ""));
-        const response = await notion.databases.query({
+
+        // Retry logic for database query by slug
+        const response = await withRetry(() => notion.databases.query({
             database_id: formattedId,
             filter: {
                 and: [
@@ -124,7 +150,7 @@ export const getPostBySlug = async (slug: string): Promise<Post | null> => {
                     },
                 ],
             },
-        });
+        }), 3, 1000, `notion.databases.query (slug: ${slug})`);
 
         console.log(`Found ${response.results.length} results for slug: ${slug}`);
         if (response.results.length === 0) return null;
@@ -133,10 +159,15 @@ export const getPostBySlug = async (slug: string): Promise<Post | null> => {
         const props = page.properties;
         const pageId = page.id;
 
-        const content = await notion.blocks.children.list({
+        // Retry logic for preview blocks
+        const content = await withRetry(() => notion.blocks.children.list({
             block_id: pageId,
             page_size: 3, // Fetch first 3 blocks for preview
-        });
+        }), 3, 500, `notion.blocks.children.list (preview for ${slug})`)
+            .catch(err => {
+                console.error(`Failed to fetch preview for slug ${slug}`, err);
+                return { results: [] };
+            });
 
         const preview = content.results.map((block: any) => {
             if (block.type === 'paragraph') {
@@ -161,5 +192,11 @@ export const getPostBySlug = async (slug: string): Promise<Post | null> => {
 };
 
 export const getPageContent = async (pageId: string) => {
-    return await notionAPI.getPage(formatUUID(pageId));
+    // Retry logic for fetching full page content (react-notion-x)
+    return await withRetry(
+        () => notionAPI.getPage(formatUUID(pageId)),
+        3,
+        2000,
+        `notionAPI.getPage (${pageId})`
+    );
 };

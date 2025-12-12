@@ -1,8 +1,8 @@
 import { getDatabase } from "@/lib/notion";
 import Link from "next/link";
 
-// Force static generation for the home page
-export const dynamic = "force-static";
+// ISR: Revalidate every 60 seconds
+export const revalidate = 60;
 
 export default async function Home() {
     const posts = await getDatabase();

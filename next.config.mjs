@@ -1,8 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: "export", // Required for GitHub Pages
+  /* output: "export", // Removed for ISR */
   images: {
-    unoptimized: true, // Required for GitHub Pages (no Next.js Image Optimization API)
+    // unoptimized: true, // Removed for ISR to use Vercel Image Optimization
   },
   eslint: {
     // Warning: This allows production builds to successfully complete even if
