@@ -8,8 +8,8 @@ export default async function Home() {
     const posts = await getDatabase();
 
     return (
-        <main className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24">
-            <header className="mb-20">
+        <main className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
+            <header className="mb-10">
                 <div className="flex justify-between items-center">
                     <h1 className="text-2xl font-semibold text-[#2C2C2A]">
                         <Link href="/" className="hover:text-neutral-700 transition-colors">My Blog</Link>
