@@ -14,12 +14,13 @@ A clean, minimalist blog build with Next.js (App Router), Tailwind CSS, and Noti
 
 ### 1. Environment Setup
 
-Rename `.env.example` to `.env` (or create one) and add your Notion credentials:
+Values live in macOS Keychain, not in a `.env` file. `.env.keychain` (committed, no values) maps each name to a Keychain item; start the dev server through `keychain-secret` (from `tcf245/agent-skills/tools`):
 
-```env
-NOTION_TOKEN=secret_xxxxxxxxxxxxxxxxx
-NOTION_DATABASE_ID=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+```bash
+keychain-secret run .env.keychain -- npm run dev
 ```
+
+On a new machine, store the two values first: `keychain-secret add blog/local/NOTION_TOKEN eric` and `keychain-secret add blog/local/NOTION_DATABASE_ID eric`. Deployments read the same names from the hosting provider's env settings.
 
 - **NOTION_TOKEN**: Your Notion Integration Token (create one at [Notion Developers](https://www.notion.so/my-integrations)).
 - **NOTION_DATABASE_ID**: The ID of your Notion database.
