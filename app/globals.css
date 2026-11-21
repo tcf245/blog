@@ -293,9 +293,10 @@ body {
   margin-top: 0;
 }
 
-/* Inline code: quiet, same colour as text. */
+/* Inline code: Notion's coral, kept on purpose as the one lively accent
+   (fine while used sparingly); new font, weight and size. */
 .post-body .notion-inline-code {
-  color: #3D3D3A;
+  color: #EB5757;
   background: var(--color-code-bg);
   font-family: var(--font-mono);
   font-size: 0.875em;
