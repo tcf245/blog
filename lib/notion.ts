@@ -7,7 +7,14 @@ console.log(`[lib/notion.ts] Module loaded. NOTION_TOKEN is ${process.env.NOTION
 const notion = new Client({ auth: process.env.NOTION_TOKEN });
 
 // Unofficial Client for fetching Page RecordMap (for react-notion-x)
-const notionAPI = new NotionAPI();
+// Notion now answers 403 to unauthenticated calls on www.notion.so/api/v3,
+// even for public pages; the workspace's public notion.site domain still
+// serves published pages. Override with NOTION_API_BASE_URL if the site moves.
+const notionAPI = new NotionAPI({
+    apiBaseUrl:
+        process.env.NOTION_API_BASE_URL ||
+        "https://handsome-polyanthus-984.notion.site/api/v3",
+});
 
 // Helper to ensure Database ID is in UUID format (with dashes)
 const formatUUID = (id: string) => {
