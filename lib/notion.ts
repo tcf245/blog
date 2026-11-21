@@ -1,6 +1,9 @@
 import { Client } from "@notionhq/client";
 import { NotionCompatAPI } from "notion-compat";
 import type { ExtendedRecordMap } from "notion-types";
+import { defaultMapImageUrl } from "notion-utils";
+import { cache } from "react";
+import { imageSizeFromBytes, normalizeHeadings } from "./post-utils";
 
 console.log(`[lib/notion.ts] Module loaded. NOTION_TOKEN is ${process.env.NOTION_TOKEN ? 'defined' : 'undefined'}`);
 
@@ -56,7 +59,7 @@ const withRetry = async <T>(
     }
 };
 
-export const getDatabase = async (): Promise<Post[]> => {
+export const getDatabase = cache(async (): Promise<Post[]> => {
     console.log("Attempting to get database...");
     const databaseId = process.env.NOTION_DATABASE_ID;
     if (!databaseId) {
@@ -123,9 +126,9 @@ export const getDatabase = async (): Promise<Post[]> => {
         console.error("Failed to query Notion database on Vercel. Check your ID and Token.", error);
         return [];
     }
-};
+});
 
-export const getPostBySlug = async (slug: string): Promise<Post | null> => {
+export const getPostBySlug = cache(async (slug: string): Promise<Post | null> => {
     console.log(`Attempting to get post by slug: ${slug}`);
     const databaseId = process.env.NOTION_DATABASE_ID;
     if (!databaseId) {
@@ -197,7 +200,7 @@ export const getPostBySlug = async (slug: string): Promise<Post | null> => {
         console.error(`Failed to fetch post by slug ${slug} on Vercel.`, error);
         return null;
     }
-};
+});
 
 // notion-compat 7.12 wraps each image caption item in an extra array
 // (caption = [[[text, ...]]] instead of [[text, ...]]), which makes
@@ -213,7 +216,61 @@ const fixImageCaptions = (recordMap: ExtendedRecordMap): ExtendedRecordMap => {
     return recordMap;
 };
 
-export const getPageContent = async (pageId: string) => {
+// The URL react-notion-x's <Asset> passes to its image component, derived the
+// same way (react-notion-x 7.12 Asset, image branch). It is the key for
+// recordMap.preview_images.
+const renderedImageUrl = (recordMap: ExtendedRecordMap, block: any): string | null => {
+    let source: string | undefined =
+        recordMap.signed_urls?.[block.id] || block.properties?.source?.[0]?.[0];
+    if (!source) return null;
+    if (block.space_id) {
+        const url = new URL(source);
+        url.searchParams.set("spaceId", block.space_id);
+        source = url.toString();
+    }
+    if (!source.includes(".gif") && source.includes("file.notion.so")) {
+        source = block.properties?.source?.[0]?.[0];
+    }
+    return source ? defaultMapImageUrl(source, block) ?? null : null;
+};
+
+// The official API gives no image dimensions, so images render with no height
+// until they load and shift the text below (CLS). Read each image's size from
+// its first bytes and hand it to react-notion-x as a preview image: it then
+// reserves the space and lazy-loads the real image.
+const TRANSPARENT_PIXEL = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
+
+const addImageSizes = async (recordMap: ExtendedRecordMap): Promise<ExtendedRecordMap> => {
+    const images = Object.values(recordMap.block)
+        .map((entry: any) => entry?.value)
+        .filter((block: any) => block?.type === "image");
+    const previews: Record<string, unknown> = { ...(recordMap.preview_images ?? {}) };
+    await Promise.all(images.map(async (block: any) => {
+        const key = renderedImageUrl(recordMap, block);
+        const source = recordMap.signed_urls?.[block.id] || block.properties?.source?.[0]?.[0];
+        if (!key || !source) return;
+        try {
+            const res = await fetch(source, {
+                headers: { Range: "bytes=0-65535" },
+                signal: AbortSignal.timeout(3000),
+            });
+            const size = imageSizeFromBytes(new Uint8Array(await res.arrayBuffer()));
+            if (size) {
+                previews[key] = {
+                    originalWidth: size.width,
+                    originalHeight: size.height,
+                    dataURIBase64: TRANSPARENT_PIXEL,
+                };
+            }
+        } catch (err) {
+            console.warn(`Could not read image size for block ${block.id}`, err);
+        }
+    }));
+    recordMap.preview_images = previews as ExtendedRecordMap["preview_images"];
+    return recordMap;
+};
+
+export const getPageContent = cache(async (pageId: string) => {
     // Retry logic for fetching full page content (react-notion-x)
     const recordMap = await withRetry(
         () => notionCompat.getPage(formatUUID(pageId)),
@@ -221,5 +278,5 @@ export const getPageContent = async (pageId: string) => {
         2000,
         `notionCompat.getPage (${pageId})`
     );
-    return fixImageCaptions(recordMap);
-};
+    return addImageSizes(normalizeHeadings(fixImageCaptions(recordMap)));
+});

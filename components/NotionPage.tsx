@@ -33,11 +33,12 @@ export default function NotionPage({ recordMap }: NotionPageProps) {
     }
 
     return (
-        <div className="notion-container">
+        <div className="post-body">
             <NotionRenderer
                 recordMap={recordMap}
                 fullPage={false}
                 darkMode={false}
+                previewImages
                 disableHeader
                 components={{
                     Code,
@@ -46,54 +47,9 @@ export default function NotionPage({ recordMap }: NotionPageProps) {
                     Modal,
                     nextLink: Link,
                 }}
-                // Custom classes to match our minimalist design
+                // Styles live in app/globals.css under .post-body
                 mapPageUrl={(pageId) => `/${pageId.replace(/-/g, "")}`}
             />
-            <style jsx global>{`
-                .notion {
-                    font-family: var(--font-sans) !important;
-                    color: var(--color-foreground) !important;
-                    caret-color: var(--color-foreground) !important;
-                }
-                .notion-h1, .notion-h2, .notion-h3 {
-                    font-family: var(--font-sans) !important;
-                    color: #2C2C2A !important;
-                }
-                .notion-text {
-                    line-height: 1.8 !important;
-                }
-                /* Full-width page; each block is centred in the reading column */
-                .notion-page {
-                    padding: 0 !important;
-                    width: 100% !important;
-                    max-width: none !important;
-                }
-                .notion-page > *,
-                .notion-page-content > * {
-                    width: 100%;
-                    max-width: 52rem;
-                    box-sizing: border-box;
-                    margin-left: auto !important;
-                    margin-right: auto !important;
-                }
-                /* Images and diagrams may use the wider shell */
-                .notion-page > .notion-asset-wrapper,
-                .notion-page-content > .notion-asset-wrapper {
-                    max-width: 100% !important;
-                    width: 100% !important;
-                }
-                .notion-asset-wrapper img {
-                    border-radius: 6px;
-                }
-                .notion-asset-caption {
-                    text-align: center;
-                }
-                @media (min-width: 1024px) {
-                    .notion-text, .notion-list li {
-                        font-size: 17px !important;
-                    }
-                }
-            `}</style>
         </div>
     );
 }

@@ -1,7 +1,11 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getPostBySlug, getPageContent, getDatabase } from "@/lib/notion";
+import { adjacentPosts, extractToc, htmlLang, pageText, readingMinutes } from "@/lib/post-utils";
 import NotionPage from "@/components/NotionPage";
+import SiteHeader from "@/components/SiteHeader";
+import PostMeta from "@/components/PostMeta";
 
 // Generate static params for existing posts (pre-rendering)
 export async function generateStaticParams() {
@@ -21,6 +25,15 @@ interface PageProps {
     params: { slug: string };
 }
 
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+    const post = await getPostBySlug(params.slug);
+    if (!post) return {};
+    return {
+        title: post.title,
+        description: post.preview.replace(/\s+/g, " ").slice(0, 160),
+    };
+}
+
 export default async function Page({ params }: PageProps) {
     const { slug } = params;
     const post = await getPostBySlug(slug);
@@ -29,40 +42,60 @@ export default async function Page({ params }: PageProps) {
         notFound();
     }
 
-    const recordMap = await getPageContent(post.id);
+    const [recordMap, posts] = await Promise.all([getPageContent(post.id), getDatabase()]);
+    const pageId = post.id; // dashed UUID, the record map's root block key
+    // Top-level sections only: a short, quiet outline.
+    const toc = extractToc(recordMap, pageId).filter((item) => item.level === 1);
+    const minutes = readingMinutes(pageText(recordMap, pageId));
+    const { previous, next } = adjacentPosts(posts, slug);
 
     return (
-        <main className="site-shell py-12 sm:py-16 bg-[#FBFBFA] min-h-screen">
-            <article>
+        <main className="site-shell py-12 sm:py-16 min-h-screen">
+            <article lang={htmlLang(post.lang)}>
                 <div className="reading">
-                {/* Compact Navigation Header */}
-                <header className="flex justify-between items-center mb-10">
-                    <h1 className="text-xl font-semibold text-[#2C2C2A]">
-                        <Link href="/" className="hover:text-neutral-700 transition-colors">Eric's Blog</Link>
-                    </h1>
-                    <Link href="/" className="inline-flex items-center text-sm text-neutral-500 hover:text-neutral-800 transition-colors group">
-                        <span className="mr-1 group-hover:-translate-x-1 transition-transform">←</span> Back
-                    </Link>
-                </header>
+                    <SiteHeader back />
 
-                {/* Article Header */}
-                <header className="mb-8 border-b border-neutral-200 pb-6">
-                    <div className="flex items-center gap-3 text-xs font-mono text-neutral-400 mb-3">
-                        <time>{post.date}</time>
-                        <span className="w-px h-3 bg-neutral-300"></span>
-                        <span className="uppercase tracking-wider">{post.tags.join(", ")}</span>
-                    </div>
-                    <h1 className="text-3xl font-bold text-[#1E1E1E] leading-tight">
-                        {post.title}
-                    </h1>
-                </header>
-
+                    <header className="mb-8 border-b border-[var(--color-rule)] pb-6">
+                        <div className="mb-3">
+                            <PostMeta date={post.date} tags={post.tags} minutes={minutes} lang={post.lang} />
+                        </div>
+                        <h1 className="text-[1.625rem] sm:text-3xl font-bold text-[var(--color-heading)] leading-snug">
+                            {post.title}
+                        </h1>
+                    </header>
                 </div>
 
-                {/* Content */}
-                <div className="">
-                    <NotionPage recordMap={recordMap} />
-                </div>
+                {toc.length > 2 && (
+                    <nav className="toc" aria-label="Table of contents">
+                        <div className="toc-title">Contents</div>
+                        {toc.map((item) => (
+                            <a key={item.id} href={`#${item.id}`}>
+                                {item.text}
+                            </a>
+                        ))}
+                    </nav>
+                )}
+
+                <NotionPage recordMap={recordMap} />
+
+                <footer className="reading post-end">
+                    {(previous || next) && (
+                        <nav className="post-pager" aria-label="More posts">
+                            {previous && (
+                                <Link href={`/${previous.slug}`}>
+                                    <span className="post-pager-label">← Previous</span>
+                                    <span className="post-pager-title">{previous.title}</span>
+                                </Link>
+                            )}
+                            {next && (
+                                <Link href={`/${next.slug}`} className="post-pager-next">
+                                    <span className="post-pager-label">Next →</span>
+                                    <span className="post-pager-title">{next.title}</span>
+                                </Link>
+                            )}
+                        </nav>
+                    )}
+                </footer>
             </article>
         </main>
     );
