@@ -4,7 +4,12 @@ import { NotionAPI } from "notion-client";
 console.log(`[lib/notion.ts] Module loaded. NOTION_TOKEN is ${process.env.NOTION_TOKEN ? 'defined' : 'undefined'}`);
 
 // Official Client for querying Database (SSR/ISR)
-const notion = new Client({ auth: process.env.NOTION_TOKEN });
+// Use Node's built-in fetch: the bundled node-fetch 2 calls url.parse() on
+// every request, which logs a DEP0169 warning at error level on Vercel.
+const notion = new Client({
+    auth: process.env.NOTION_TOKEN,
+    fetch: globalThis.fetch as never,
+});
 
 // Unofficial Client for fetching Page RecordMap (for react-notion-x)
 // Notion now answers 403 to unauthenticated calls on www.notion.so/api/v3,
