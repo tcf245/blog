@@ -15,8 +15,10 @@ const notoSansSC = Noto_Sans_SC({
   display: "swap",
 });
 
+// No fixed weights: Google Fonts serves the static Noto Sans JP weights as
+// extensionless /l/font?kit= URLs, which crash next/font 14.2's loader.
+// The variable font covers 400-700 and is served as .woff2.
 const notoSansJP = Noto_Sans_JP({
-  weight: ["400", "500", "700"],
   subsets: ["latin"],
   variable: "--font-noto-sans-jp",
   display: "swap",
