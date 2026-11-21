@@ -17,7 +17,6 @@ Planned work that is agreed but not started. Newest decisions first.
 - **Self-host post images.** Images load from Notion (`img.notionusercontent.com`, signed URLs that
   expire after an hour, 180 KB PNGs). Copy them to our own storage (e.g. R2) at build time and serve
   resized WebP.
-- **Favicon.** Options under review; replaces the default Next.js `favicon.ico` (26 KB).
 
 ## Known issues
 
