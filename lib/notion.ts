@@ -1,5 +1,6 @@
 import { Client } from "@notionhq/client";
-import { NotionAPI } from "notion-client";
+import { NotionCompatAPI } from "notion-compat";
+import type { ExtendedRecordMap } from "notion-types";
 
 console.log(`[lib/notion.ts] Module loaded. NOTION_TOKEN is ${process.env.NOTION_TOKEN ? 'defined' : 'undefined'}`);
 
@@ -11,15 +12,10 @@ const notion = new Client({
     fetch: globalThis.fetch as never,
 });
 
-// Unofficial Client for fetching Page RecordMap (for react-notion-x)
-// Notion now answers 403 to unauthenticated calls on www.notion.so/api/v3,
-// even for public pages; the workspace's public notion.site domain still
-// serves published pages. Override with NOTION_API_BASE_URL if the site moves.
-const notionAPI = new NotionAPI({
-    apiBaseUrl:
-        process.env.NOTION_API_BASE_URL ||
-        "https://handsome-polyanthus-984.notion.site/api/v3",
-});
+// Page content for react-notion-x, read through the official API with the same
+// integration token and converted to a RecordMap. Pages do not need to be
+// published to the web: ticking `Published` in the database is the only switch.
+const notionCompat = new NotionCompatAPI(notion);
 
 // Helper to ensure Database ID is in UUID format (with dashes)
 const formatUUID = (id: string) => {
@@ -203,12 +199,27 @@ export const getPostBySlug = async (slug: string): Promise<Post | null> => {
     }
 };
 
+// notion-compat 7.12 wraps each image caption item in an extra array
+// (caption = [[[text, ...]]] instead of [[text, ...]]), which makes
+// react-notion-x call .split on an array and crash the page. Flatten it.
+const fixImageCaptions = (recordMap: ExtendedRecordMap): ExtendedRecordMap => {
+    for (const entry of Object.values(recordMap.block)) {
+        const block: any = entry?.value;
+        const caption = block?.properties?.caption;
+        if (block?.type === "image" && Array.isArray(caption?.[0]?.[0])) {
+            block.properties.caption = caption.flat(1);
+        }
+    }
+    return recordMap;
+};
+
 export const getPageContent = async (pageId: string) => {
     // Retry logic for fetching full page content (react-notion-x)
-    return await withRetry(
-        () => notionAPI.getPage(formatUUID(pageId)),
+    const recordMap = await withRetry(
+        () => notionCompat.getPage(formatUUID(pageId)),
         3,
         2000,
-        `notionAPI.getPage (${pageId})`
+        `notionCompat.getPage (${pageId})`
     );
+    return fixImageCaptions(recordMap);
 };

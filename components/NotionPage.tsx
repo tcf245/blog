@@ -62,10 +62,36 @@ export default function NotionPage({ recordMap }: NotionPageProps) {
                 .notion-text {
                     line-height: 1.8 !important;
                 }
-                /* Remove default Notion page padding if any */
+                /* Full-width page; each block is centred in the reading column */
                 .notion-page {
                     padding: 0 !important;
                     width: 100% !important;
+                    max-width: none !important;
+                }
+                .notion-page > *,
+                .notion-page-content > * {
+                    width: 100%;
+                    max-width: 52rem;
+                    box-sizing: border-box;
+                    margin-left: auto !important;
+                    margin-right: auto !important;
+                }
+                /* Images and diagrams may use the wider shell */
+                .notion-page > .notion-asset-wrapper,
+                .notion-page-content > .notion-asset-wrapper {
+                    max-width: 100% !important;
+                    width: 100% !important;
+                }
+                .notion-asset-wrapper img {
+                    border-radius: 6px;
+                }
+                .notion-asset-caption {
+                    text-align: center;
+                }
+                @media (min-width: 1024px) {
+                    .notion-text, .notion-list li {
+                        font-size: 17px !important;
+                    }
                 }
             `}</style>
         </div>

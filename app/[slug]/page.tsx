@@ -32,12 +32,13 @@ export default async function Page({ params }: PageProps) {
     const recordMap = await getPageContent(post.id);
 
     return (
-        <main className="max-w-2xl mx-auto px-6 py-12 bg-[#FBFBFA] min-h-screen">
+        <main className="site-shell py-12 sm:py-16 bg-[#FBFBFA] min-h-screen">
             <article>
+                <div className="reading">
                 {/* Compact Navigation Header */}
                 <header className="flex justify-between items-center mb-10">
                     <h1 className="text-xl font-semibold text-[#2C2C2A]">
-                        <Link href="/" className="hover:text-neutral-700 transition-colors">My Blog</Link>
+                        <Link href="/" className="hover:text-neutral-700 transition-colors">Eric's Blog</Link>
                     </h1>
                     <Link href="/" className="inline-flex items-center text-sm text-neutral-500 hover:text-neutral-800 transition-colors group">
                         <span className="mr-1 group-hover:-translate-x-1 transition-transform">←</span> Back
@@ -55,6 +56,8 @@ export default async function Page({ params }: PageProps) {
                         {post.title}
                     </h1>
                 </header>
+
+                </div>
 
                 {/* Content */}
                 <div className="">

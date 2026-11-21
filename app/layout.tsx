@@ -25,8 +25,8 @@ const notoSansJP = Noto_Sans_JP({
 });
 
 export const metadata: Metadata = {
-  title: "Minimalist Notion Blog",
-  description: "A minimalist blog powered by Next.js and Notion",
+  title: "Eric's Blog",
+  description: "Eric's notes on building things with AI agents, learning, and everyday life.",
 };
 
 export default function RootLayout({

@@ -19,3 +19,24 @@ body {
   color: var(--color-foreground);
   font-family: var(--font-sans);
 }
+
+/* Layout: a responsive shell with a readable text column.
+   Text stays at a comfortable line length (about 45 CJK characters at most);
+   images and diagrams may use the wider shell. */
+.site-shell {
+  width: 100%;
+  max-width: 72rem; /* 1152px: widest figures */
+  margin-inline: auto;
+  padding-inline: clamp(1.25rem, 4vw, 3rem);
+}
+
+.reading {
+  max-width: 52rem; /* 832px: text column on wide screens */
+  margin-inline: auto;
+}
+
+@media (min-width: 1024px) {
+  body {
+    font-size: 17px;
+  }
+}
