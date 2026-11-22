@@ -1,5 +1,8 @@
 import { getDatabase } from "@/lib/notion";
+import { SITE_DESCRIPTION } from "@/lib/site";
 import Link from "next/link";
+import SiteHeader from "@/components/SiteHeader";
+import PostMeta from "@/components/PostMeta";
 
 // ISR: Revalidate every 60 seconds
 export const revalidate = 60;
@@ -10,38 +13,31 @@ export default async function Home() {
     return (
         <main className="site-shell py-12 sm:py-16">
             <div className="reading">
-            <header className="mb-10">
-                <div className="flex justify-between items-center">
-                    <h1 className="text-2xl font-semibold text-[#2C2C2A]">
-                        <Link href="/" className="hover:text-neutral-700 transition-colors">Eric's Blog</Link>
-                    </h1>
-                </div>
-            </header>
+                <SiteHeader />
+                <p className="-mt-6 mb-14 text-[0.9375rem] text-[var(--color-secondary)]">{SITE_DESCRIPTION}</p>
 
-            <div className="space-y-14">
-                {posts.map((post) => (
-                    <Link href={`/${post.slug}`} key={post.id} className="block group">
-                        <article>
-                            <header>
-                                <div className="text-sm text-neutral-500 mb-2">
-                                    <time dateTime={post.date}>{new Date(post.date).toLocaleDateString()}</time>
-                                </div>
-                                <h2 className="text-2xl font-semibold text-[#2C2C2A] mb-3 leading-tight group-hover:text-neutral-700 transition-colors">
-                                    {post.title}
-                                </h2>
-                            </header>
-                            <div className="text-base text-neutral-800 leading-relaxed mb-5">
-                                <p>{post.preview}</p>
-                            </div>
-                            <footer>
-                                <div className="text-base font-medium text-neutral-900 group-hover:underline">
-                                    Read more
-                                </div>
-                            </footer>
-                        </article>
-                    </Link>
-                ))}
-            </div>
+                <div className="space-y-14">
+                    {posts.map((post) => (
+                        <Link href={`/${post.slug}`} key={post.id} className="block group" lang={post.lang === "en" ? "en" : undefined}>
+                            <article>
+                                <header>
+                                    <div className="mb-2">
+                                        <PostMeta date={post.date} tags={post.tags} />
+                                    </div>
+                                    <h2 className="text-2xl font-semibold text-[var(--color-heading)] mb-3 leading-snug group-hover:text-neutral-600 transition-colors">
+                                        {post.title}
+                                    </h2>
+                                </header>
+                                <p className="leading-relaxed mb-4">{post.preview}</p>
+                                <footer>
+                                    <span className="text-[0.9375rem] font-medium text-[var(--color-heading)] group-hover:underline underline-offset-4">
+                                        Read more
+                                    </span>
+                                </footer>
+                            </article>
+                        </Link>
+                    ))}
+                </div>
             </div>
         </main>
     );

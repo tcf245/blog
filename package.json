@@ -6,12 +6,15 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "node --test --experimental-strip-types --no-warnings lib/*.test.ts"
   },
   "dependencies": {
     "@notionhq/client": "^2.2.14",
     "next": "14.2.3",
     "notion-compat": "^7.12.1",
+    "notion-types": "^7.12.1",
+    "notion-utils": "^7.12.1",
     "react": "18.2.0",
     "react-dom": "18.2.0",
     "react-notion-x": "^7.12.1"

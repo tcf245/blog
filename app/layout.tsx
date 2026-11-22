@@ -1,46 +1,26 @@
 import type { Metadata } from "next";
-import { Inter, Noto_Sans_SC, Noto_Sans_JP } from "next/font/google";
 import "./globals.css";
+import { SITE_DESCRIPTION } from "@/lib/site";
 
-const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-inter",
-  display: "swap",
-});
-
-const notoSansSC = Noto_Sans_SC({
-  weight: ["400", "500", "700"],
-  subsets: ["latin"],
-  variable: "--font-noto-sans-sc",
-  display: "swap",
-});
-
-// No fixed weights: Google Fonts serves the static Noto Sans JP weights as
-// extensionless /l/font?kit= URLs, which crash next/font 14.2's loader.
-// The variable font covers 400-700 and is served as .woff2.
-const notoSansJP = Noto_Sans_JP({
-  subsets: ["latin"],
-  variable: "--font-noto-sans-jp",
-  display: "swap",
-});
+// Fonts: system PingFang SC / Hiragino stack (see globals.css). No web font is
+// preloaded; Google Sans Code is self-hosted and loads only where code appears.
 
 export const metadata: Metadata = {
-  title: "Eric's Blog",
-  description: "Eric's notes on building things with AI agents, learning, and everyday life.",
+    title: {
+        default: "Eric's Blog",
+        template: "%s — Eric's Blog",
+    },
+    description: SITE_DESCRIPTION,
 };
 
 export default function RootLayout({
-  children,
+    children,
 }: Readonly<{
-  children: React.ReactNode;
+    children: React.ReactNode;
 }>) {
-  return (
-    <html lang="en" suppressHydrationWarning>
-      <body
-        className={`${inter.variable} ${notoSansSC.variable} ${notoSansJP.variable} antialiased`}
-      >
-        {children}
-      </body>
-    </html>
-  );
+    return (
+        <html lang="zh-CN" suppressHydrationWarning>
+            <body className="antialiased">{children}</body>
+        </html>
+    );
 }
