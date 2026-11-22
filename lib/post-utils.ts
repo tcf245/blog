@@ -134,3 +134,24 @@ export const imageSizeFromBytes = (bytes: Uint8Array): { width: number; height: 
     }
     return null;
 };
+
+/**
+ * Return the direct signed S3 URL without Notion's spaceId query param (which
+ * breaks the AWS signature), or null otherwise. Notion's image proxy rejects
+ * pages that were never published to the web, whereas the S3 URL works as-is.
+ */
+export const signedS3Url = (url: string): string | null => {
+    let parsed: URL;
+    try {
+        parsed = new URL(url);
+    } catch {
+        return null;
+    }
+    if (!parsed.hostname.endsWith(".amazonaws.com") || !parsed.searchParams.has("X-Amz-Signature")) {
+        return null;
+    }
+    if (parsed.searchParams.has("spaceId")) {
+        parsed.searchParams.delete("spaceId");
+    }
+    return parsed.toString();
+};
