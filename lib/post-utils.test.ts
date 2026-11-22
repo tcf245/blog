@@ -10,6 +10,7 @@ import {
     pageText,
     adjacentPosts,
     imageSizeFromBytes,
+    signedS3Url,
 } from "./post-utils.ts";
 
 test("formatDate renders YYYY–MM–DD with en dashes", () => {
@@ -111,4 +112,14 @@ test("imageSizeFromBytes reads PNG, JPEG, GIF and WebP headers", () => {
     assert.deepEqual(imageSizeFromBytes(webp), { width: 640, height: 480 });
 
     assert.equal(imageSizeFromBytes(new Uint8Array([1, 2, 3])), null);
+});
+
+// Notion image proxy rejects never-web-published pages (FB-054)
+test("signedS3Url keeps signed S3 URLs direct and strips spaceId", () => {
+    const signed = "https://prod-files-secure.s3.us-west-2.amazonaws.com/space/file/image.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Signature=abc123";
+    assert.equal(signedS3Url(signed), signed);
+    assert.equal(signedS3Url(`${signed}&spaceId=abc`), signed);
+    assert.equal(signedS3Url("https://www.notion.so/image/https%3A%2F%2Fexample.com%2Fa.png?table=block&id=123"), null);
+    assert.equal(signedS3Url("https://prod-files-secure.s3.us-west-2.amazonaws.com/space/file/image.png?spaceId=abc"), null);
+    assert.equal(signedS3Url("not a url"), null);
 });

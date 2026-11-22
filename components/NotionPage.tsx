@@ -4,6 +4,7 @@ import { NotionRenderer } from "react-notion-x";
 import { ExtendedRecordMap } from "notion-types";
 import Link from "next/link";
 import dynamic from "next/dynamic";
+import { mapImageUrl } from "../lib/image-url";
 
 // Core styles
 import "react-notion-x/src/styles.css";
@@ -49,6 +50,7 @@ export default function NotionPage({ recordMap }: NotionPageProps) {
                 }}
                 // Styles live in app/globals.css under .post-body
                 mapPageUrl={(pageId) => `/${pageId.replace(/-/g, "")}`}
+                mapImageUrl={mapImageUrl}
             />
         </div>
     );

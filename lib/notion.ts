@@ -1,8 +1,8 @@
 import { Client } from "@notionhq/client";
 import { NotionCompatAPI } from "notion-compat";
 import type { ExtendedRecordMap } from "notion-types";
-import { defaultMapImageUrl } from "notion-utils";
 import { cache } from "react";
+import { mapImageUrl } from "./image-url";
 import { imageSizeFromBytes, normalizeHeadings } from "./post-utils";
 
 console.log(`[lib/notion.ts] Module loaded. NOTION_TOKEN is ${process.env.NOTION_TOKEN ? 'defined' : 'undefined'}`);
@@ -232,7 +232,7 @@ const renderedImageUrl = (recordMap: ExtendedRecordMap, block: ImageBlock): stri
     if (!source.includes(".gif") && source.includes("file.notion.so")) {
         source = block.properties?.source?.[0]?.[0];
     }
-    return source ? defaultMapImageUrl(source, block as never) ?? null : null;
+    return source ? mapImageUrl(source, block as never) ?? null : null;
 };
 
 // The official API gives no image dimensions, so images render with no height
