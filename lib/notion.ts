@@ -59,6 +59,51 @@ const withRetry = async <T>(
     }
 };
 
+// The fields we read from a database row. The SDK's own page type is a wide
+// union, so rows are narrowed to this shape once, here.
+type RichText = { plain_text: string }[];
+interface PostRow {
+    id: string;
+    properties: {
+        Name?: { title?: RichText };
+        Date?: { date?: { start?: string } | null };
+        Slug?: { rich_text?: RichText };
+        Tags?: { multi_select?: { name: string }[] };
+        Lang?: { select?: { name?: string } | null };
+    };
+}
+type PreviewBlock = { type?: string; paragraph?: { rich_text: RichText } };
+
+const plainText = (text: RichText = []) => text.map((t) => t.plain_text).join("");
+
+// The first paragraphs of a page, as the list preview.
+const fetchPreview = async (pageId: string, label: string): Promise<string> => {
+    const content = await withRetry(() => notion.blocks.children.list({
+        block_id: pageId,
+        page_size: 3, // Fetch first 3 blocks for preview
+    }), 3, 500, `notion.blocks.children.list (preview for ${label})`)
+        .catch(err => {
+            console.error(`Failed to fetch preview for ${label}`, err);
+            return { results: [] };
+        });
+    return (content.results as PreviewBlock[])
+        .map((block) => (block.type === "paragraph" ? plainText(block.paragraph?.rich_text) : ""))
+        .join(" ").slice(0, 200) + "...";
+};
+
+const toPost = async (row: PostRow, label: string, fallbackDate: string): Promise<Post> => {
+    const props = row.properties;
+    return {
+        id: row.id,
+        title: props.Name?.title?.[0]?.plain_text || "Untitled",
+        date: props.Date?.date?.start || fallbackDate,
+        slug: props.Slug?.rich_text?.[0]?.plain_text || "",
+        tags: props.Tags?.multi_select?.map((tag) => tag.name) || [],
+        lang: props.Lang?.select?.name || "en",
+        preview: await fetchPreview(row.id, label),
+    };
+};
+
 export const getDatabase = cache(async (): Promise<Post[]> => {
     console.log("Attempting to get database...");
     const databaseId = process.env.NOTION_DATABASE_ID;
@@ -89,37 +134,10 @@ export const getDatabase = cache(async (): Promise<Post[]> => {
 
         console.log(`Found ${response.results.length} posts in database.`);
 
-        const posts = await Promise.all(response.results.map(async (page: any) => {
-            const props = page.properties;
-            const pageId = page.id;
-
-            // Retry logic for fetching page content (blocks) for preview
-            const content = await withRetry(() => notion.blocks.children.list({
-                block_id: pageId,
-                page_size: 3, // Fetch first 3 blocks for preview
-            }), 3, 500, `notion.blocks.children.list (preview for ${pageId})`)
-                .catch(err => {
-                    console.error(`Failed to fetch preview for page ${pageId}`, err);
-                    return { results: [] };
-                });
-
-            const preview = content.results.map((block: any) => {
-                if (block.type === 'paragraph') {
-                    return block.paragraph.rich_text.map((t: any) => t.plain_text).join('');
-                }
-                return '';
-            }).join(' ').slice(0, 200) + '...';
-
-            return {
-                id: page.id,
-                title: props.Name?.title?.[0]?.plain_text || "Untitled",
-                date: props.Date?.date?.start || new Date().toISOString().split('T')[0],
-                slug: props.Slug?.rich_text?.[0]?.plain_text || "",
-                tags: props.Tags?.multi_select?.map((tag: any) => tag.name) || [],
-                lang: props.Lang?.select?.name || "en",
-                preview: preview,
-            };
-        }));
+        const today = new Date().toISOString().split('T')[0];
+        const posts = await Promise.all((response.results as unknown as PostRow[]).map(
+            (row) => toPost(row, row.id, today),
+        ));
 
         return posts;
     } catch (error) {
@@ -166,36 +184,7 @@ export const getPostBySlug = cache(async (slug: string): Promise<Post | null> =>
         console.log(`Found ${response.results.length} results for slug: ${slug}`);
         if (response.results.length === 0) return null;
 
-        const page: any = response.results[0];
-        const props = page.properties;
-        const pageId = page.id;
-
-        // Retry logic for preview blocks
-        const content = await withRetry(() => notion.blocks.children.list({
-            block_id: pageId,
-            page_size: 3, // Fetch first 3 blocks for preview
-        }), 3, 500, `notion.blocks.children.list (preview for ${slug})`)
-            .catch(err => {
-                console.error(`Failed to fetch preview for slug ${slug}`, err);
-                return { results: [] };
-            });
-
-        const preview = content.results.map((block: any) => {
-            if (block.type === 'paragraph') {
-                return block.paragraph.rich_text.map((t: any) => t.plain_text).join('');
-            }
-            return '';
-        }).join(' ').slice(0, 200) + '...';
-
-        return {
-            id: page.id,
-            title: props.Name?.title?.[0]?.plain_text || "Untitled",
-            date: props.Date?.date?.start || "",
-            slug: props.Slug?.rich_text?.[0]?.plain_text || "",
-            tags: props.Tags?.multi_select?.map((tag: any) => tag.name) || [],
-            lang: props.Lang?.select?.name || "en",
-            preview: preview,
-        };
+        return await toPost(response.results[0] as unknown as PostRow, slug, "");
     } catch (error) {
         console.error(`Failed to fetch post by slug ${slug} on Vercel.`, error);
         return null;
@@ -205,12 +194,24 @@ export const getPostBySlug = cache(async (slug: string): Promise<Post | null> =>
 // notion-compat 7.12 wraps each image caption item in an extra array
 // (caption = [[[text, ...]]] instead of [[text, ...]]), which makes
 // react-notion-x call .split on an array and crash the page. Flatten it.
+// The image block fields read below (notion-types' Block union is too wide).
+interface ImageBlock {
+    id: string;
+    type?: string;
+    space_id?: string;
+    properties?: { source?: string[][]; caption?: unknown[][] };
+}
+
+const imageBlocks = (recordMap: ExtendedRecordMap): ImageBlock[] =>
+    Object.values(recordMap.block)
+        .map((entry) => entry?.value as unknown as ImageBlock | undefined)
+        .filter((block): block is ImageBlock => block?.type === "image");
+
 const fixImageCaptions = (recordMap: ExtendedRecordMap): ExtendedRecordMap => {
-    for (const entry of Object.values(recordMap.block)) {
-        const block: any = entry?.value;
-        const caption = block?.properties?.caption;
-        if (block?.type === "image" && Array.isArray(caption?.[0]?.[0])) {
-            block.properties.caption = caption.flat(1);
+    for (const block of imageBlocks(recordMap)) {
+        const caption = block.properties?.caption;
+        if (caption && Array.isArray(caption[0]?.[0])) {
+            block.properties!.caption = caption.flat(1) as unknown[][];
         }
     }
     return recordMap;
@@ -219,7 +220,7 @@ const fixImageCaptions = (recordMap: ExtendedRecordMap): ExtendedRecordMap => {
 // The URL react-notion-x's <Asset> passes to its image component, derived the
 // same way (react-notion-x 7.12 Asset, image branch). It is the key for
 // recordMap.preview_images.
-const renderedImageUrl = (recordMap: ExtendedRecordMap, block: any): string | null => {
+const renderedImageUrl = (recordMap: ExtendedRecordMap, block: ImageBlock): string | null => {
     let source: string | undefined =
         recordMap.signed_urls?.[block.id] || block.properties?.source?.[0]?.[0];
     if (!source) return null;
@@ -231,7 +232,7 @@ const renderedImageUrl = (recordMap: ExtendedRecordMap, block: any): string | nu
     if (!source.includes(".gif") && source.includes("file.notion.so")) {
         source = block.properties?.source?.[0]?.[0];
     }
-    return source ? defaultMapImageUrl(source, block) ?? null : null;
+    return source ? defaultMapImageUrl(source, block as never) ?? null : null;
 };
 
 // The official API gives no image dimensions, so images render with no height
@@ -241,11 +242,9 @@ const renderedImageUrl = (recordMap: ExtendedRecordMap, block: any): string | nu
 const TRANSPARENT_PIXEL = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
 
 const addImageSizes = async (recordMap: ExtendedRecordMap): Promise<ExtendedRecordMap> => {
-    const images = Object.values(recordMap.block)
-        .map((entry: any) => entry?.value)
-        .filter((block: any) => block?.type === "image");
+    const images = imageBlocks(recordMap);
     const previews: Record<string, unknown> = { ...(recordMap.preview_images ?? {}) };
-    await Promise.all(images.map(async (block: any) => {
+    await Promise.all(images.map(async (block) => {
         const key = renderedImageUrl(recordMap, block);
         const source = recordMap.signed_urls?.[block.id] || block.properties?.source?.[0]?.[0];
         if (!key || !source) return;

@@ -4,7 +4,7 @@ A clean, minimalist blog build with Next.js (App Router), Tailwind CSS, and Noti
 
 ## Features
 
-- 🚀 **Next.js 14** App Router
+- 🚀 **Next.js 16** App Router (React 19)
 - 🎨 **Tailwind CSS** for styling
 - 📝 **Notion as CMS** (write posts in Notion, publish automatically)
 - ⚡ **Fast & SEO Friendly** (Server-side rendering / Static generation)

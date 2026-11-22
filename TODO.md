@@ -17,8 +17,3 @@ Planned work that is agreed but not started. Newest decisions first.
 - **Self-host post images.** Images load from Notion (`img.notionusercontent.com`, signed URLs that
   expire after an hour, 180 KB PNGs). Copy them to our own storage (e.g. R2) at build time and serve
   resized WebP.
-
-## Known issues
-
-- `npm run lint` fails: `eslint.config.mjs` imports `eslint/config`, which ESLint 8 does not export.
-  Builds skip lint (`ignoreDuringBuilds`), so nothing is blocked.
