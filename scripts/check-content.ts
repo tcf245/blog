@@ -1,5 +1,5 @@
 import { Client } from "@notionhq/client";
-import { hasCjk, pairingProblems, type ContentRow } from "../lib/post-utils.ts";
+import { hasCjk, pairingProblems, untranslated, type ContentRow } from "../lib/post-utils.ts";
 
 const formatUUID = (id: string) => {
     const clean = id.replace(/-/g, "");
@@ -132,13 +132,18 @@ const main = async () => {
         }
     }
 
+    // A missing translation is allowed (the two lists may differ for a while); just list it.
+    for (const { slug, has } of untranslated(rows)) {
+        console.log(`Not yet in ${has === "zh" ? "en" : "zh"}: [${slug}]`);
+    }
+
     if (pairing.length === 0 && codeIssues.length === 0) {
-        console.log(`OK: ${rows.length} published pages (${rows.length / 2} live pairs), no CJK in code blocks.`);
+        console.log(`OK: ${rows.length} published pages, no broken rows, no CJK in code blocks.`);
         process.exit(0);
     }
 
     if (pairing.length > 0) {
-        console.error(`Pairing problems (${pairing.length}):`);
+        console.error(`Broken rows (${pairing.length}):`);
         for (const issue of pairing) {
             const label = issue.slug ? `[${issue.slug}]` : "[no-slug]";
             console.error(`  - ${label} ${issue.reason}`);

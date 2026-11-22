@@ -36,7 +36,7 @@ Open [http://localhost:3000](http://localhost:3000) with your browser.
 
 ## Languages
 
-Posts are bilingual (`en` and `zh`) under `/en/<slug>` and `/zh/<slug>`; `/` and bare `/<slug>` redirect using the `lang` cookie or `Accept-Language`. In Notion `Blog Articles`, create two pages per post sharing the same `Slug` with `Lang` set to `zh` and `en`—a slug goes live only when both versions have `Published` ticked, and before publishing you can run `keychain-secret run .env.keychain -- npm run check:content` to verify pairings and ensure code blocks contain no CJK text.
+Posts are bilingual (`en` and `zh`) under `/en/<slug>` and `/zh/<slug>`; `/` and bare `/<slug>` redirect using the `lang` cookie or `Accept-Language`. In Notion `Blog Articles`, create two pages per post sharing the same `Slug` with `Lang` set to `zh` and `en`; each language's list shows only the posts published in that language, so publish the translation soon after the original. Before publishing, run `keychain-secret run .env.keychain -- npm run check:content`: it lists posts not yet in the other language and fails on broken rows or CJK text in code blocks.
 
 ## Deployment on Vercel
 

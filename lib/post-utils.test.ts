@@ -13,6 +13,7 @@ import {
     signedS3Url,
     livePosts,
     pairingProblems,
+    untranslated,
     hasCjk,
     cjkInCode,
 } from "./post-utils.ts";
@@ -128,56 +129,51 @@ test("signedS3Url keeps signed S3 URLs direct and strips spaceId", () => {
     assert.equal(signedS3Url("not a url"), null);
 });
 
-test("livePosts requires an exact published zh + en pair and keeps input order", () => {
+test("livePosts lists one language only, translated or not, keeping order (Eric 2026-11-22)", () => {
     const posts = [
-        { id: "1", slug: "paired-new", lang: "zh" },
-        { id: "2", slug: "paired-new", lang: "en" },
+        { id: "1", slug: "paired", lang: "zh" },
+        { id: "2", slug: "paired", lang: "en" },
         { id: "3", slug: "zh-only", lang: "zh" },
         { id: "4", slug: "en-only", lang: "en" },
         { id: "5", slug: "ja-only", lang: "ja" },
         { id: "6", slug: "dup-zh", lang: "zh" },
         { id: "7", slug: "dup-zh", lang: "zh" },
-        { id: "8", slug: "dup-zh", lang: "en" },
-        { id: "9", slug: "paired-with-ja", lang: "zh" },
-        { id: "10", slug: "paired-with-ja", lang: "en" },
-        { id: "11", slug: "paired-with-ja", lang: "ja" },
-        { id: "12", slug: "", lang: "zh" },
-        { id: "13", slug: "", lang: "en" },
-        { id: "14", slug: "paired-old", lang: "en" },
-        { id: "15", slug: "paired-old", lang: "zh" },
+        { id: "8", slug: "", lang: "zh" },
     ];
 
-    assert.deepEqual(
-        livePosts(posts, "en").map((p) => p.slug),
-        ["paired-new", "paired-with-ja", "paired-old"]
-    );
-    assert.deepEqual(
-        livePosts(posts, "zh").map((p) => p.slug),
-        ["paired-new", "paired-with-ja", "paired-old"]
-    );
+    assert.deepEqual(livePosts(posts, "en").map((p) => p.id), ["2", "4"]);
+    assert.deepEqual(livePosts(posts, "zh").map((p) => p.id), ["1", "3", "6"]);
 });
 
-test("pairingProblems reports unpaired, duplicate, unsupported-lang, and slugless rows", () => {
+test("pairingProblems reports only broken rows; a missing translation is not one", () => {
     assert.deepEqual(
         pairingProblems([
             { slug: "ok", lang: "en", title: "OK" },
-            { slug: "ok", lang: "zh", title: "好" },
+            { slug: "ok", lang: "zh", title: "OK zh" },
+            { slug: "zh-only", lang: "zh", title: "Only ZH" },
         ]),
         []
     );
 
     const problems = pairingProblems([
-        { slug: "zh-only", lang: "zh", title: "Only ZH" },
-        { slug: "en-only", lang: "en", title: "Only EN" },
         { slug: "dup-zh", lang: "zh", title: "Dup 1" },
         { slug: "dup-zh", lang: "zh", title: "Dup 2" },
-        { slug: "dup-zh", lang: "en", title: "Dup EN" },
         { slug: "ja-post", lang: "ja", title: "JA" },
         { slug: "", lang: "en", title: "No Slug" },
     ]);
+    assert.deepEqual(problems.map((p) => p.slug), ["", "dup-zh", "ja-post"]);
+});
 
-    assert.equal(problems.length, 5);
-    assert.deepEqual(problems.map((p) => p.slug), ["", "zh-only", "en-only", "dup-zh", "ja-post"]);
+test("untranslated lists slugs published in one language only", () => {
+    assert.deepEqual(
+        untranslated([
+            { slug: "paired", lang: "zh" },
+            { slug: "paired", lang: "en" },
+            { slug: "zh-only", lang: "zh" },
+            { slug: "en-only", lang: "en" },
+        ]),
+        [{ slug: "zh-only", has: "zh" }, { slug: "en-only", has: "en" }]
+    );
 });
 
 test("hasCjk detects CJK characters without stateful /g side effects", () => {

@@ -43,6 +43,9 @@ export default async function Home({ params }: PageProps) {
                 <SiteHeader lang={lang} altHref={`/${otherLang(lang)}`} />
                 <p className="-mt-6 mb-14 text-[0.9375rem] text-[var(--color-secondary)]">{SITE_DESCRIPTION}</p>
 
+                {posts.length === 0 && (
+                    <p className="text-[var(--color-secondary)]">No posts in this language yet.</p>
+                )}
                 <div className="space-y-14">
                     {posts.map((post) => (
                         <Link href={`/${lang}/${post.slug}`} key={post.id} className="block group">

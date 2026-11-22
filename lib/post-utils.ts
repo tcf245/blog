@@ -137,18 +137,21 @@ const countLangsBySlug = (rows: readonly ContentRow[]): Map<string, LangCounts> 
 };
 
 /**
- * Filter published rows to those for `lang` whose slug has an exact
- * published zh + en pair (ignoring rows with other languages). Preserves order.
+ * The posts listed in one language: rows with that `Lang` and a Slug, newest
+ * first as given. A page never mixes languages, but the two lists may differ
+ * while a translation is pending (Eric 2026-11-22). A duplicate slug in the
+ * same language keeps the first (newest) row; check:content reports it.
  */
 export const livePosts = <T extends { slug: string; lang: string }>(posts: T[], lang: Lang): T[] => {
-    const live = new Set<string>();
-    for (const [slug, counts] of countLangsBySlug(posts)) {
-        if (counts.zh === 1 && counts.en === 1) live.add(slug);
-    }
-    return posts.filter((post) => post.lang === lang && live.has(post.slug));
+    const seen = new Set<string>();
+    return posts.filter((post) => {
+        if (post.lang !== lang || !post.slug || seen.has(post.slug)) return false;
+        seen.add(post.slug);
+        return true;
+    });
 };
 
-/** Report published rows whose slug lacks an exact zh + en partner or uses an unsupported Lang. */
+/** Published rows that break the content model: no Slug, unsupported Lang, or a slug repeated in one language. */
 export const pairingProblems = (rows: readonly ContentRow[]): PairingProblem[] => {
     const problems: PairingProblem[] = [];
 
@@ -168,22 +171,22 @@ export const pairingProblems = (rows: readonly ContentRow[]): PairingProblem[] =
                 reason: `unsupported Lang (${counts.other.map((l) => l || "unset").join(", ")})`,
             });
         }
-        if (counts.zh === 1 && counts.en === 1) continue;
-        if (counts.zh === 0 && counts.en === 0 && counts.other.length > 0) continue;
-
-        if (counts.zh === 1 && counts.en === 0) {
-            problems.push({ slug, reason: "missing en partner (has 1 zh)" });
-        } else if (counts.zh === 0 && counts.en === 1) {
-            problems.push({ slug, reason: "missing zh partner (has 1 en)" });
-        } else {
-            problems.push({
-                slug,
-                reason: `expected 1 zh and 1 en, found ${counts.zh} zh and ${counts.en} en`,
-            });
+        if (counts.zh > 1 || counts.en > 1) {
+            problems.push({ slug, reason: `slug repeated in one language: ${counts.zh} zh, ${counts.en} en` });
         }
     }
 
     return problems;
+};
+
+/** Slugs published in only one of zh / en: a translation still to publish. Not an error. */
+export const untranslated = (rows: readonly ContentRow[]): { slug: string; has: Lang }[] => {
+    const result: { slug: string; has: Lang }[] = [];
+    for (const [slug, counts] of countLangsBySlug(rows)) {
+        if (counts.zh > 0 && counts.en === 0) result.push({ slug, has: "zh" });
+        else if (counts.en > 0 && counts.zh === 0) result.push({ slug, has: "en" });
+    }
+    return result;
 };
 
 /** Posts are listed newest first: previous = older post, next = newer post. */

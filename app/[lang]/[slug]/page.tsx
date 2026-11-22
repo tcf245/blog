@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import NotionPage from "@/components/NotionPage";
 import PostMeta from "@/components/PostMeta";
 import SiteHeader from "@/components/SiteHeader";
@@ -37,11 +37,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
         description: post.preview.replace(/\s+/g, " ").slice(0, 160),
         alternates: {
             canonical: `/${lang}/${slug}`,
-            languages: {
-                en: `/en/${slug}`,
-                "zh-CN": `/zh/${slug}`,
-                "x-default": `/${slug}`,
-            },
+            // Only versions that exist; a pending translation is not announced.
+            languages: (await getPostBySlug(slug, otherLang(lang)))
+                ? { en: `/en/${slug}`, "zh-CN": `/zh/${slug}`, "x-default": `/${slug}` }
+                : { [htmlLangFor(lang)]: `/${lang}/${slug}` },
         },
     };
 }
@@ -52,8 +51,14 @@ export default async function Page({ params }: PageProps) {
         notFound();
     }
 
-    const post = await getPostBySlug(slug, lang);
+    const [post, translation] = await Promise.all([
+        getPostBySlug(slug, lang),
+        getPostBySlug(slug, otherLang(lang)),
+    ]);
     if (!post) {
+        // An old link or the switch can land on a language this post is not in
+        // yet: show the version that exists rather than a 404.
+        if (translation) redirect(`/${otherLang(lang)}/${slug}`);
         notFound();
     }
 
@@ -68,7 +73,7 @@ export default async function Page({ params }: PageProps) {
         <main className="site-shell py-12 sm:py-16 min-h-screen">
             <article lang={htmlLangFor(lang)}>
                 <div className="reading">
-                    <SiteHeader lang={lang} altHref={`/${otherLang(lang)}/${slug}`} back />
+                    <SiteHeader lang={lang} altHref={translation ? `/${otherLang(lang)}/${slug}` : `/${otherLang(lang)}`} back />
 
                     <header className="mb-8 border-b border-[var(--color-rule)] pb-6">
                         <div className="mb-3">
