@@ -6,16 +6,14 @@ export default function PostMeta({
     date,
     tags,
     minutes,
-    lang,
 }: {
     date: string;
     tags: string[];
     minutes?: number;
-    lang?: string;
 }) {
     const parts: React.ReactNode[] = [<time key="date" dateTime={date}>{formatDate(date)}</time>];
     if (tags.length) parts.push(<span key="tags" className="post-meta-tag">{tags.join(", ")}</span>);
-    if (minutes) parts.push(<span key="time">{lang === "zh" || !lang ? `约 ${minutes} 分钟` : `${minutes} min read`}</span>);
+    if (minutes) parts.push(<span key="time">{`${minutes} min read`}</span>);
 
     return (
         <div className="post-meta">

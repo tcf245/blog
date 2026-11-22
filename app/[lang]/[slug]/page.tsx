@@ -1,15 +1,17 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
 import Link from "next/link";
-import { getPostBySlug, getPageContent, getDatabase } from "@/lib/notion";
-import { adjacentPosts, extractToc, htmlLang, pageText, readingMinutes } from "@/lib/post-utils";
+import { notFound } from "next/navigation";
 import NotionPage from "@/components/NotionPage";
-import SiteHeader from "@/components/SiteHeader";
 import PostMeta from "@/components/PostMeta";
+import SiteHeader from "@/components/SiteHeader";
+import { htmlLangFor, isLang, otherLang } from "@/lib/i18n";
+import { getLivePosts, getPageContent, getPostBySlug } from "@/lib/notion";
+import { adjacentPosts, extractToc, pageText, readingMinutes } from "@/lib/post-utils";
 
-// Generate static params for existing posts (pre-rendering)
-export async function generateStaticParams() {
-    const posts = await getDatabase();
+// Generate static params for existing live posts in each language
+export async function generateStaticParams({ params }: { params: { lang: string } }) {
+    if (!isLang(params.lang)) return [];
+    const posts = await getLivePosts(params.lang);
     return posts.map((post) => ({
         slug: post.slug,
     }));
@@ -22,28 +24,40 @@ export const revalidate = 60;
 export const dynamicParams = true;
 
 interface PageProps {
-    params: Promise<{ slug: string }>;
+    params: Promise<{ lang: string; slug: string }>;
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-    const { slug } = await params;
-    const post = await getPostBySlug(slug);
+    const { lang, slug } = await params;
+    if (!isLang(lang)) return {};
+    const post = await getPostBySlug(slug, lang);
     if (!post) return {};
     return {
         title: post.title,
         description: post.preview.replace(/\s+/g, " ").slice(0, 160),
+        alternates: {
+            canonical: `/${lang}/${slug}`,
+            languages: {
+                en: `/en/${slug}`,
+                "zh-CN": `/zh/${slug}`,
+                "x-default": `/${slug}`,
+            },
+        },
     };
 }
 
 export default async function Page({ params }: PageProps) {
-    const { slug } = await params;
-    const post = await getPostBySlug(slug);
+    const { lang, slug } = await params;
+    if (!isLang(lang)) {
+        notFound();
+    }
 
+    const post = await getPostBySlug(slug, lang);
     if (!post) {
         notFound();
     }
 
-    const [recordMap, posts] = await Promise.all([getPageContent(post.id), getDatabase()]);
+    const [recordMap, posts] = await Promise.all([getPageContent(post.id), getLivePosts(lang)]);
     const pageId = post.id; // dashed UUID, the record map's root block key
     // Top-level sections only: a short, quiet outline.
     const toc = extractToc(recordMap, pageId).filter((item) => item.level === 1);
@@ -52,13 +66,13 @@ export default async function Page({ params }: PageProps) {
 
     return (
         <main className="site-shell py-12 sm:py-16 min-h-screen">
-            <article lang={htmlLang(post.lang)}>
+            <article lang={htmlLangFor(lang)}>
                 <div className="reading">
-                    <SiteHeader back />
+                    <SiteHeader lang={lang} altHref={`/${otherLang(lang)}/${slug}`} back />
 
                     <header className="mb-8 border-b border-[var(--color-rule)] pb-6">
                         <div className="mb-3">
-                            <PostMeta date={post.date} tags={post.tags} minutes={minutes} lang={post.lang} />
+                            <PostMeta date={post.date} tags={post.tags} minutes={minutes} />
                         </div>
                         <h1 className="text-[1.625rem] sm:text-3xl font-bold text-[var(--color-heading)] leading-snug">
                             {post.title}
@@ -83,13 +97,13 @@ export default async function Page({ params }: PageProps) {
                     {(previous || next) && (
                         <nav className="post-pager" aria-label="More posts">
                             {previous && (
-                                <Link href={`/${previous.slug}`}>
+                                <Link href={`/${lang}/${previous.slug}`}>
                                     <span className="post-pager-label">← Previous</span>
                                     <span className="post-pager-title">{previous.title}</span>
                                 </Link>
                             )}
                             {next && (
-                                <Link href={`/${next.slug}`} className="post-pager-next">
+                                <Link href={`/${lang}/${next.slug}`} className="post-pager-next">
                                     <span className="post-pager-label">Next →</span>
                                     <span className="post-pager-title">{next.title}</span>
                                 </Link>

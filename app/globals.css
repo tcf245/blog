@@ -43,6 +43,16 @@
 
 html {
   scroll-padding-top: 1.5rem;
+  --body-line-height: 1.8;
+}
+
+html:lang(en),
+article:lang(en) {
+  --body-line-height: 1.65;
+}
+
+:lang(zh-CN) {
+  text-autospace: normal;
 }
 
 body {
@@ -50,7 +60,7 @@ body {
   color: var(--color-foreground);
   font-family: var(--font-sans);
   font-size: 16px;
-  line-height: 1.8;
+  line-height: var(--body-line-height, 1.8);
 }
 
 @media (min-width: 1024px) {
@@ -79,6 +89,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 0.75rem;
   height: 3rem;
   margin-bottom: 2.5rem;
 }
@@ -88,8 +99,16 @@ body {
   font-weight: 600;
   line-height: 1;
   color: var(--color-heading);
+  white-space: nowrap;
   /* a larger tap target without moving the text */
-  padding: 0.75rem 0.75rem 0.75rem 0;
+  padding: 0.75rem 0.5rem 0.75rem 0;
+}
+
+.site-header-right {
+  display: inline-flex;
+  align-items: center;
+  gap: 1rem;
+  flex-shrink: 0;
 }
 
 .site-nav-link {
@@ -98,11 +117,40 @@ body {
   gap: 0.25rem;
   font-size: 0.875rem;
   color: var(--color-secondary);
-  padding: 0.75rem 0 0.75rem 0.75rem;
+  white-space: nowrap;
+  padding: 0.75rem 0;
   transition: color 0.15s;
 }
 
 .site-nav-link:hover {
+  color: var(--color-foreground);
+}
+
+.lang-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.875rem;
+  color: var(--color-secondary);
+  white-space: nowrap;
+}
+
+.lang-switch-current {
+  color: var(--color-heading);
+  font-weight: 500;
+}
+
+.lang-switch-sep {
+  color: var(--color-muted);
+}
+
+.lang-switch a {
+  color: var(--color-secondary);
+  padding: 0.75rem 0;
+  transition: color 0.15s;
+}
+
+.lang-switch a:hover {
   color: var(--color-foreground);
 }
 
@@ -226,7 +274,7 @@ body {
 
 .post-body .notion {
   font-size: inherit;
-  line-height: 1.8;
+  line-height: var(--body-line-height, 1.8);
 }
 
 /* Every block centred in the 52rem reading column. */
@@ -250,7 +298,7 @@ body {
 .post-body .notion-text {
   padding: 0;
   margin-block: 0.45em;
-  line-height: 1.8;
+  line-height: var(--body-line-height, 1.8);
 }
 
 .post-body .notion-list {
@@ -259,7 +307,7 @@ body {
 
 .post-body .notion-list li {
   padding: 0;
-  line-height: 1.8;
+  line-height: var(--body-line-height, 1.8);
 }
 
 /* Headings: h2 24px, h3 20px, h4 17px; space above binds each to its section. */

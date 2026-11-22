@@ -34,6 +34,10 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser.
 
+## Languages
+
+Posts are bilingual (`en` and `zh`) under `/en/<slug>` and `/zh/<slug>`; `/` and bare `/<slug>` redirect using the `lang` cookie or `Accept-Language`. In Notion `Blog Articles`, create two pages per post sharing the same `Slug` with `Lang` set to `zh` and `en`—a slug goes live only when both versions have `Published` ticked, and before publishing you can run `keychain-secret run .env.keychain -- npm run check:content` to verify pairings and ensure code blocks contain no CJK text.
+
 ## Deployment on Vercel
 
 1. Push your code to a Git repository (GitHub/GitLab/Bitbucket).
