@@ -11,21 +11,21 @@
   },
   "dependencies": {
     "@notionhq/client": "^2.2.14",
-    "next": "14.2.3",
+    "next": "^16.4.6",
     "notion-compat": "^7.12.1",
     "notion-types": "^7.12.1",
     "notion-utils": "^7.12.1",
-    "react": "18.2.0",
-    "react-dom": "18.2.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
     "react-notion-x": "^7.12.1"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
-    "@types/react": "^18",
-    "@types/react-dom": "^18",
-    "eslint": "^8",
-    "eslint-config-next": "14.2.3",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "eslint": "^9.39.5",
+    "eslint-config-next": "^16.4.6",
     "tailwindcss": "^4",
     "typescript": "^5"
   }
