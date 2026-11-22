@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "node --test --experimental-strip-types --no-warnings lib/*.test.ts"
+    "test": "node --test --experimental-strip-types --no-warnings lib/*.test.ts",
+    "check:content": "node --experimental-strip-types --no-warnings scripts/check-content.ts"
   },
   "dependencies": {
     "@notionhq/client": "^2.2.14",

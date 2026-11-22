@@ -2,8 +2,9 @@ import { Client } from "@notionhq/client";
 import { NotionCompatAPI } from "notion-compat";
 import type { ExtendedRecordMap } from "notion-types";
 import { cache } from "react";
+import type { Lang } from "./i18n";
 import { mapImageUrl } from "./image-url";
-import { imageSizeFromBytes, normalizeHeadings } from "./post-utils";
+import { imageSizeFromBytes, livePosts, normalizeHeadings } from "./post-utils";
 
 console.log(`[lib/notion.ts] Module loaded. NOTION_TOKEN is ${process.env.NOTION_TOKEN ? 'defined' : 'undefined'}`);
 
@@ -95,11 +96,11 @@ const toPost = async (row: PostRow, label: string, fallbackDate: string): Promis
     const props = row.properties;
     return {
         id: row.id,
-        title: props.Name?.title?.[0]?.plain_text || "Untitled",
+        title: plainText(props.Name?.title) || "Untitled",
         date: props.Date?.date?.start || fallbackDate,
-        slug: props.Slug?.rich_text?.[0]?.plain_text || "",
+        slug: plainText(props.Slug?.rich_text),
         tags: props.Tags?.multi_select?.map((tag) => tag.name) || [],
-        lang: props.Lang?.select?.name || "en",
+        lang: props.Lang?.select?.name || "",
         preview: await fetchPreview(row.id, label),
     };
 };
@@ -146,49 +147,13 @@ export const getDatabase = cache(async (): Promise<Post[]> => {
     }
 });
 
-export const getPostBySlug = cache(async (slug: string): Promise<Post | null> => {
-    console.log(`Attempting to get post by slug: ${slug}`);
-    const databaseId = process.env.NOTION_DATABASE_ID;
-    if (!databaseId) {
-        console.warn("NOTION_DATABASE_ID is not defined for getPostBySlug on Vercel.");
-        return null;
-    }
-    console.log(`Found NOTION_DATABASE_ID for getPostBySlug: ${databaseId ? 'Yes' : 'No'}`);
+export const getLivePosts = cache(async (lang: Lang): Promise<Post[]> => {
+    return livePosts(await getDatabase(), lang);
+});
 
-    // Basic validation
-    if (!isValidNotionId(databaseId)) {
-        console.error(`Error: NOTION_DATABASE_ID is invalid ("${databaseId}").`);
-        return null;
-    }
-
-    try {
-        const formattedId = formatUUID(databaseId.replace(/-/g, ""));
-
-        // Retry logic for database query by slug
-        const response = await withRetry(() => notion.databases.query({
-            database_id: formattedId,
-            filter: {
-                and: [
-                    {
-                        property: "Published",
-                        checkbox: { equals: true },
-                    },
-                    {
-                        property: "Slug",
-                        rich_text: { equals: slug },
-                    },
-                ],
-            },
-        }), 3, 1000, `notion.databases.query (slug: ${slug})`);
-
-        console.log(`Found ${response.results.length} results for slug: ${slug}`);
-        if (response.results.length === 0) return null;
-
-        return await toPost(response.results[0] as unknown as PostRow, slug, "");
-    } catch (error) {
-        console.error(`Failed to fetch post by slug ${slug} on Vercel.`, error);
-        return null;
-    }
+export const getPostBySlug = cache(async (slug: string, lang: Lang): Promise<Post | null> => {
+    const posts = await getLivePosts(lang);
+    return posts.find((post) => post.slug === slug) ?? null;
 });
 
 // notion-compat 7.12 wraps each image caption item in an extra array

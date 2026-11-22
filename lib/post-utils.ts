@@ -1,6 +1,7 @@
 // Pure helpers for posts and Notion record maps. No runtime imports, so
 // `node --test` can run them directly (see post-utils.test.ts).
 import type { ExtendedRecordMap } from "notion-types";
+import type { Lang } from "./i18n.ts";
 
 /** "2026-11-21" or an ISO timestamp -> "2026–11–21" (en dashes). */
 export const formatDate = (date: string): string => {
@@ -15,7 +16,10 @@ export const htmlLang = (lang: string): string => {
     return "zh-CN";
 };
 
-const CJK = /[぀-ヿ㐀-䶿一-鿿豈-﫿]/g;
+const CJK_CHAR = /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff]/;
+const CJK = new RegExp(CJK_CHAR.source, "g");
+
+export const hasCjk = (text: string): boolean => CJK_CHAR.test(text);
 
 /** Minutes to read: 400 CJK characters or 200 Latin words a minute. */
 export const readingMinutes = (text: string): number => {
@@ -86,6 +90,103 @@ export const pageText = (recordMap: ExtendedRecordMap, pageId: string): string =
         if (t) lines.push(t);
     });
     return lines.join("\n");
+};
+
+/** Text of code blocks within the page that contain CJK characters. */
+export const cjkInCode = (recordMap: ExtendedRecordMap, pageId: string): string[] => {
+    const matches: string[] = [];
+    walk(recordMap, pageId, (b) => {
+        if (b.type !== "code") return;
+        const text = blockText(b);
+        if (hasCjk(text)) matches.push(text);
+    });
+    return matches;
+};
+
+export interface ContentRow {
+    slug: string;
+    lang: string;
+    title?: string;
+}
+
+export interface PairingProblem {
+    slug: string;
+    reason: string;
+}
+
+interface LangCounts {
+    zh: number;
+    en: number;
+    other: string[];
+}
+
+const countLangsBySlug = (rows: readonly ContentRow[]): Map<string, LangCounts> => {
+    const bySlug = new Map<string, LangCounts>();
+    for (const row of rows) {
+        if (!row.slug) continue;
+        let counts = bySlug.get(row.slug);
+        if (!counts) {
+            counts = { zh: 0, en: 0, other: [] };
+            bySlug.set(row.slug, counts);
+        }
+        if (row.lang === "zh") counts.zh += 1;
+        else if (row.lang === "en") counts.en += 1;
+        else counts.other.push(row.lang);
+    }
+    return bySlug;
+};
+
+/**
+ * The posts listed in one language: rows with that `Lang` and a Slug, newest
+ * first as given. A page never mixes languages, but the two lists may differ
+ * while a translation is pending (Eric 2026-11-22). A duplicate slug in the
+ * same language keeps the first (newest) row; check:content reports it.
+ */
+export const livePosts = <T extends { slug: string; lang: string }>(posts: T[], lang: Lang): T[] => {
+    const seen = new Set<string>();
+    return posts.filter((post) => {
+        if (post.lang !== lang || !post.slug || seen.has(post.slug)) return false;
+        seen.add(post.slug);
+        return true;
+    });
+};
+
+/** Published rows that break the content model: no Slug, unsupported Lang, or a slug repeated in one language. */
+export const pairingProblems = (rows: readonly ContentRow[]): PairingProblem[] => {
+    const problems: PairingProblem[] = [];
+
+    for (const row of rows) {
+        if (!row.slug) {
+            problems.push({
+                slug: "",
+                reason: `published page "${row.title || "(untitled)"}" has no Slug (lang: ${row.lang || "unset"})`,
+            });
+        }
+    }
+
+    for (const [slug, counts] of countLangsBySlug(rows)) {
+        if (counts.other.length > 0) {
+            problems.push({
+                slug,
+                reason: `unsupported Lang (${counts.other.map((l) => l || "unset").join(", ")})`,
+            });
+        }
+        if (counts.zh > 1 || counts.en > 1) {
+            problems.push({ slug, reason: `slug repeated in one language: ${counts.zh} zh, ${counts.en} en` });
+        }
+    }
+
+    return problems;
+};
+
+/** Slugs published in only one of zh / en: a translation still to publish. Not an error. */
+export const untranslated = (rows: readonly ContentRow[]): { slug: string; has: Lang }[] => {
+    const result: { slug: string; has: Lang }[] = [];
+    for (const [slug, counts] of countLangsBySlug(rows)) {
+        if (counts.zh > 0 && counts.en === 0) result.push({ slug, has: "zh" });
+        else if (counts.en > 0 && counts.zh === 0) result.push({ slug, has: "en" });
+    }
+    return result;
 };
 
 /** Posts are listed newest first: previous = older post, next = newer post. */

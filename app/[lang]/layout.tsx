@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
-import "./globals.css";
+import { notFound } from "next/navigation";
+import "../globals.css";
+import { htmlLangFor, isLang, LANGS } from "@/lib/i18n";
 import { SITE_DESCRIPTION } from "@/lib/site";
 
 // Fonts: system PingFang SC / Hiragino stack (see globals.css). No web font is
@@ -13,13 +15,24 @@ export const metadata: Metadata = {
     description: SITE_DESCRIPTION,
 };
 
-export default function RootLayout({
+export function generateStaticParams() {
+    return LANGS.map((lang) => ({ lang }));
+}
+
+export default async function RootLayout({
     children,
+    params,
 }: Readonly<{
     children: React.ReactNode;
+    params: Promise<{ lang: string }>;
 }>) {
+    const { lang } = await params;
+    if (!isLang(lang)) {
+        notFound();
+    }
+
     return (
-        <html lang="zh-CN" suppressHydrationWarning>
+        <html lang={htmlLangFor(lang)} suppressHydrationWarning>
             <body className="antialiased">{children}</body>
         </html>
     );

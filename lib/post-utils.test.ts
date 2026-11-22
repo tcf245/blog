@@ -11,6 +11,11 @@ import {
     adjacentPosts,
     imageSizeFromBytes,
     signedS3Url,
+    livePosts,
+    pairingProblems,
+    untranslated,
+    hasCjk,
+    cjkInCode,
 } from "./post-utils.ts";
 
 test("formatDate renders YYYY–MM–DD with en dashes", () => {
@@ -122,4 +127,75 @@ test("signedS3Url keeps signed S3 URLs direct and strips spaceId", () => {
     assert.equal(signedS3Url("https://www.notion.so/image/https%3A%2F%2Fexample.com%2Fa.png?table=block&id=123"), null);
     assert.equal(signedS3Url("https://prod-files-secure.s3.us-west-2.amazonaws.com/space/file/image.png?spaceId=abc"), null);
     assert.equal(signedS3Url("not a url"), null);
+});
+
+test("livePosts lists one language only, translated or not, keeping order (Eric 2026-11-22)", () => {
+    const posts = [
+        { id: "1", slug: "paired", lang: "zh" },
+        { id: "2", slug: "paired", lang: "en" },
+        { id: "3", slug: "zh-only", lang: "zh" },
+        { id: "4", slug: "en-only", lang: "en" },
+        { id: "5", slug: "ja-only", lang: "ja" },
+        { id: "6", slug: "dup-zh", lang: "zh" },
+        { id: "7", slug: "dup-zh", lang: "zh" },
+        { id: "8", slug: "", lang: "zh" },
+    ];
+
+    assert.deepEqual(livePosts(posts, "en").map((p) => p.id), ["2", "4"]);
+    assert.deepEqual(livePosts(posts, "zh").map((p) => p.id), ["1", "3", "6"]);
+});
+
+test("pairingProblems reports only broken rows; a missing translation is not one", () => {
+    assert.deepEqual(
+        pairingProblems([
+            { slug: "ok", lang: "en", title: "OK" },
+            { slug: "ok", lang: "zh", title: "OK zh" },
+            { slug: "zh-only", lang: "zh", title: "Only ZH" },
+        ]),
+        []
+    );
+
+    const problems = pairingProblems([
+        { slug: "dup-zh", lang: "zh", title: "Dup 1" },
+        { slug: "dup-zh", lang: "zh", title: "Dup 2" },
+        { slug: "ja-post", lang: "ja", title: "JA" },
+        { slug: "", lang: "en", title: "No Slug" },
+    ]);
+    assert.deepEqual(problems.map((p) => p.slug), ["", "dup-zh", "ja-post"]);
+});
+
+test("untranslated lists slugs published in one language only", () => {
+    assert.deepEqual(
+        untranslated([
+            { slug: "paired", lang: "zh" },
+            { slug: "paired", lang: "en" },
+            { slug: "zh-only", lang: "zh" },
+            { slug: "en-only", lang: "en" },
+        ]),
+        [{ slug: "zh-only", has: "zh" }, { slug: "en-only", has: "en" }]
+    );
+});
+
+test("hasCjk detects CJK characters without stateful /g side effects", () => {
+    assert.equal(hasCjk(""), false);
+    assert.equal(hasCjk("const x = 1 + 2;"), false);
+    assert.equal(hasCjk("// 中文注释"), true);
+    assert.equal(hasCjk("// 日本語"), true);
+    // Repeated calls must remain consistent
+    assert.equal(hasCjk("中文"), true);
+    assert.equal(hasCjk("中文"), true);
+});
+
+test("cjkInCode returns only code blocks containing CJK, including nested blocks", () => {
+    const map = {
+        block: {
+            page: block("page", "page", "Post", ["t-1", "c-en", "c-zh", "tog-1"]),
+            "t-1": block("t-1", "text", "正文里有中文"),
+            "c-en": block("c-en", "code", "const ok = true;"),
+            "c-zh": block("c-zh", "code", "const msg = '你好';"),
+            "tog-1": block("tog-1", "toggle", "More", ["c-nested"]),
+            "c-nested": block("c-nested", "code", "# 注释"),
+        },
+    };
+    assert.deepEqual(cjkInCode(map as never, "page"), ["const msg = '你好';", "# 注释"]);
 });
