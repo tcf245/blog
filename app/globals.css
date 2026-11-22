@@ -61,7 +61,7 @@ body {
 
 /* ---------- Layout ---------- */
 
-/* A responsive shell; text sits in an 832px column, figures may use the shell. */
+/* A responsive shell; text and figures sit in an 832px reading column. */
 .site-shell {
   width: 100%;
   max-width: 72rem;
@@ -229,7 +229,7 @@ body {
   line-height: 1.8;
 }
 
-/* Every block centred in the text column; figures may use the wider shell. */
+/* Every block centred in the 52rem reading column. */
 .post-body .notion-page {
   padding: 0;
   width: 100%;
@@ -243,10 +243,6 @@ body {
   box-sizing: border-box;
   margin-left: auto;
   margin-right: auto;
-}
-
-.post-body .notion-page-content > .notion-asset-wrapper {
-  max-width: 100%;
 }
 
 /* Paragraphs sit 0.9em apart; list items closer (0.6em). Notion emits each
@@ -321,11 +317,33 @@ body {
   font-family: var(--font-mono);
 }
 
-.post-body .notion-asset-wrapper {
+/* Images stay inside the reading column so they never cover the TOC (FB-055). */
+.post-body .notion-asset-wrapper,
+.post-body .notion-asset-wrapper-image,
+.post-body .notion-asset-wrapper-full {
+  width: 100%;
+  min-width: 0;
+  max-width: min(100%, 52rem);
   margin-block: 1.5em 1em;
+  margin-left: auto;
+  margin-right: auto;
+  transform: none;
+}
+
+.post-body .notion-asset-wrapper > div,
+.post-body .notion-asset-wrapper figure {
+  max-width: 100%;
+  margin-left: 0;
+  margin-right: 0;
+  transform: none;
 }
 
 .post-body .notion-asset-wrapper img {
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  margin-left: 0;
+  margin-right: 0;
   border-radius: 6px;
 }
 
