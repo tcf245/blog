@@ -30,6 +30,48 @@
   --font-mono: "Google Sans Code", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 
+/* Trial (Eric 2026-11-23): English pages set like cory.news as it actually
+   renders. Its CSS names IBM Plex, but the @import sits mid-file and browsers
+   ignore it, so readers see the system font (San Francisco on Apple devices).
+   What makes it read well is the setting: a larger size, line-height 1.75,
+   wider paragraph gaps, darker text, tight bold headings, mono meta line. */
+html:lang(en) body {
+  font-size: 16.5px;
+  line-height: 1.75;
+  color: #172229;
+}
+
+@media (min-width: 641px) {
+  html:lang(en) body {
+    font-size: 17.5px;
+  }
+}
+
+html:lang(en) .post-body {
+  --fg-color: #172229;
+}
+
+html:lang(en) .post-body .notion-text {
+  margin-block: 0 1.35em;
+}
+
+html:lang(en) h1,
+html:lang(en) .post-body .notion-h {
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1.25;
+}
+
+html:lang(en) .post-body .notion-h1 {
+  font-size: 1.4rem;
+  margin-top: 1.8em;
+  margin-bottom: 0.6em;
+}
+
+html:lang(en) .post-meta {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
 :lang(ja) {
   --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Sans",
     "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Yu Gothic", "PingFang SC", sans-serif;
@@ -48,7 +90,7 @@ html {
 
 html:lang(en),
 article:lang(en) {
-  --body-line-height: 1.65;
+  --body-line-height: 1.75; /* cory.news-style trial */
 }
 
 :lang(zh-CN) {
