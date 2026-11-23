@@ -46,8 +46,13 @@ The negotiation runs in `proxy.ts` (Next 16's name for middleware).
 
 ## Typography
 
-System fonts only, as now. Chinese pages keep line-height 1.8; English body text uses 1.65.
-`text-autospace: normal` on Chinese pages adds the gap between CJK and Latin text where supported.
+System fonts only, no web fonts. Chinese pages keep line-height 1.8 and
+`text-autospace: normal` (gap between CJK and Latin text where supported).
+
+English pages follow how cory.news actually renders (Eric chose it 2026-11-23 after trying
+JetBrains Mono NL, Google Sans Code and IBM Plex; monospace read too slowly in long paragraphs):
+16.5px on phones and 17.5px from 641px, line-height 1.75, text #172229, 1em between consecutive
+paragraphs (lists keep the base spacing), bold headings tracked -0.01em, monospace meta line.
 
 ## SEO
 
