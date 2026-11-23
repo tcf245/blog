@@ -30,6 +30,26 @@
   --font-mono: "Google Sans Code", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 
+/* Trial (Eric 2026-11-23): Google Sans Code for English pages. Already
+   self-hosted for code (variable weight, Latin subset), so no new download. */
+html:lang(en) {
+  --font-sans: "Google Sans Code", ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-family: var(--font-sans);
+  font-variant-ligatures: none;
+}
+
+/* Monospace glyphs are wide: slightly smaller text keeps about 70 characters
+   a line in the 52rem column. */
+html:lang(en) body {
+  font-size: 15px;
+}
+
+@media (min-width: 1024px) {
+  html:lang(en) body {
+    font-size: 16px;
+  }
+}
+
 :lang(ja) {
   --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Sans",
     "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Yu Gothic", "PingFang SC", sans-serif;
