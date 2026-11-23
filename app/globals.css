@@ -13,6 +13,42 @@
     U+FEFF, U+FFFD;
 }
 
+/* Trial (Eric 2026-11-23, after cory.news): IBM Plex Sans for English text,
+   IBM Plex Mono for the small meta line. Self-hosted Latin subsets (SIL OFL);
+   only English pages download them. */
+@font-face {
+  font-family: "IBM Plex Sans";
+  font-style: normal;
+  font-weight: 100 700;
+  font-display: swap;
+  src: url("/fonts/ibm-plex-sans-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215,
+    U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "IBM Plex Sans";
+  font-style: italic;
+  font-weight: 100 700;
+  font-display: swap;
+  src: url("/fonts/ibm-plex-sans-latin-italic.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215,
+    U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "IBM Plex Mono";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/ibm-plex-mono-latin-400.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215,
+    U+FEFF, U+FFFD;
+}
+
 @theme {
   --color-background: #FBFBFA;
   --color-foreground: #2C2C2A;
@@ -28,6 +64,22 @@
   --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
     "Hiragino Sans GB", "Noto Sans SC", "Microsoft YaHei", sans-serif;
   --font-mono: "Google Sans Code", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+html:lang(en) {
+  --font-sans: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: var(--font-sans);
+}
+
+html:lang(en) h1,
+html:lang(en) h2,
+html:lang(en) h3,
+html:lang(en) .notion-h {
+  letter-spacing: -0.01em;
+}
+
+html:lang(en) .post-meta {
+  font-family: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
 :lang(ja) {
@@ -48,7 +100,7 @@ html {
 
 html:lang(en),
 article:lang(en) {
-  --body-line-height: 1.65;
+  --body-line-height: 1.75; /* IBM Plex Sans trial: cory.news reads at ~1.75 */
 }
 
 :lang(zh-CN) {
