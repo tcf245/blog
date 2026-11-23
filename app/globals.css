@@ -51,8 +51,11 @@ html:lang(en) .post-body {
   --fg-color: #172229;
 }
 
-html:lang(en) .post-body .notion-text {
-  margin-block: 0 1.35em;
+/* Wider gaps only between consecutive paragraphs; text inside list items and
+   the gap before or after a list keep the base spacing (Eric 2026-11-23:
+   1.35em on every text block also spread the bullets apart). */
+html:lang(en) .post-body .notion-page-content > .notion-text + .notion-text {
+  margin-top: 1em;
 }
 
 html:lang(en) h1,
