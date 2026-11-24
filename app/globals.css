@@ -551,3 +551,30 @@ body {
     font-size: 1.5rem;
   }
 }
+
+/* In-place viewer for tall images (components/NotionPage.tsx): wider than in the text, scrolls
+   vertically, tap anywhere or Esc to close. */
+.tall-image-viewer {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  overflow-y: auto;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 2rem 0;
+  background: rgba(0, 0, 0, 0.85);
+  cursor: zoom-out;
+  animation: tall-image-in 150ms ease-out;
+}
+
+.tall-image-viewer img {
+  width: min(94vw, 45rem);
+  height: auto;
+  border-radius: 6px;
+}
+
+@keyframes tall-image-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
