@@ -11,7 +11,7 @@ console.log(`[lib/notion.ts] Module loaded. NOTION_TOKEN is ${process.env.NOTION
 // Official Client for querying Database (SSR/ISR)
 // Use Node's built-in fetch: the bundled node-fetch 2 calls url.parse() on
 // every request, which logs a DEP0169 warning at error level on Vercel.
-const notion = new Client({
+export const notion = new Client({
     auth: process.env.NOTION_TOKEN,
     fetch: globalThis.fetch as never,
 });
