@@ -4,7 +4,7 @@ import type { ExtendedRecordMap } from "notion-types";
 import { cache } from "react";
 import type { Lang } from "./i18n";
 import { mapImageUrl } from "./image-url";
-import { imageSizeFromBytes, livePosts, normalizeHeadings } from "./post-utils";
+import { imageSizeFromBytes, livePosts, normalizeHeadings, phoneSizedFormat } from "./post-utils";
 
 console.log(`[lib/notion.ts] Module loaded. NOTION_TOKEN is ${process.env.NOTION_TOKEN ? 'defined' : 'undefined'}`);
 
@@ -220,6 +220,8 @@ const addImageSizes = async (recordMap: ExtendedRecordMap): Promise<ExtendedReco
             });
             const size = imageSizeFromBytes(new Uint8Array(await res.arrayBuffer()));
             if (size) {
+                const format = phoneSizedFormat((block as { format?: Record<string, unknown> }).format, size);
+                if (format) (block as { format?: unknown }).format = format;
                 previews[key] = {
                     originalWidth: size.width,
                     originalHeight: size.height,

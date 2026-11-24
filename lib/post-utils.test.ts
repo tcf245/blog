@@ -199,3 +199,14 @@ test("cjkInCode returns only code blocks containing CJK, including nested blocks
     };
     assert.deepEqual(cjkInCode(map as never, "page"), ["const msg = '你好';", "# 注释"]);
 });
+
+test("phoneSizedFormat shows tall images at phone width and leaves wide ones alone", async () => {
+    const { phoneSizedFormat, PHONE_WIDTH } = await import("./post-utils.ts");
+    assert.deepEqual(phoneSizedFormat(undefined, { width: 1474, height: 2837 }),
+        { block_width: PHONE_WIDTH, block_alignment: "center" });
+    assert.equal(phoneSizedFormat(undefined, { width: 2560, height: 1600 }), undefined);
+    const wide = { block_page_width: true };
+    assert.equal(phoneSizedFormat(wide, { width: 1000, height: 3000 }), wide);
+    assert.deepEqual(phoneSizedFormat({ block_aspect_ratio: 1.9 }, { width: 1000, height: 1900 }),
+        { block_aspect_ratio: 1.9, block_width: PHONE_WIDTH, block_alignment: "center" });
+});

@@ -256,3 +256,17 @@ export const signedS3Url = (url: string): string | null => {
     }
     return parsed.toString();
 };
+
+// Phone screenshots are uploaded at full resolution so they stay sharp when zoomed, but at
+// column width a portrait image would fill several screens. Show tall images at about phone
+// size; a tap still opens the full image (react-notion-x zoom). Eric, 2026-11-24.
+export const PHONE_WIDTH = 360;
+
+export const phoneSizedFormat = <F extends Record<string, unknown>>(
+    format: F | undefined,
+    size: { width: number; height: number },
+): F | (F & { block_width: number; block_alignment: string }) | undefined => {
+    if (size.height <= size.width * 1.2) return format;
+    if (format?.block_full_width || format?.block_page_width) return format;
+    return { ...(format ?? ({} as F)), block_width: PHONE_WIDTH, block_alignment: "center" };
+};
