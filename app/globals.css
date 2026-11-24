@@ -459,17 +459,22 @@ body {
 }
 
 /* ---------- Home: post list (Eric 2026-11-24, cory.news-style rows) ----------
-   Hairline between posts so each one reads as its own item. Wide screens:
+   Hairline only between posts (not above the first or below the last, Eric
+   2026-11-24) so each one reads as its own item. Wide screens:
    date | title + two-line preview | category. Phones: stacked, meta on top. */
 .post-list {
   list-style: none;
   padding: 0;
   margin: 0;
+}
+
+/* Lines only between posts: no rule above the first or below the last. */
+.post-list > li + li {
   border-top: 1px solid var(--color-rule);
 }
 
-.post-list > li {
-  border-bottom: 1px solid var(--color-rule);
+.post-list > li:first-child .post-row {
+  padding-top: 0;
 }
 
 .post-row {
