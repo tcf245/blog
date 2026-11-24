@@ -28,13 +28,26 @@ interface NotionPageProps {
     recordMap: ExtendedRecordMap;
 }
 
+// Tall images (phone screenshots) are shown at 60% of the column. react-notion-x's zoom fits an
+// image to the viewport height, which makes a tall screenshot smaller, not larger. So a tap on a
+// tall image opens the full-resolution file instead, where it can be scrolled and pinch-zoomed
+// (Eric, 2026-11-24: 正常浏览小一点，点击才放大). Capture phase runs before the zoom's own listener.
+const openTallImage = (event: React.MouseEvent<HTMLDivElement>) => {
+    const target = event.target;
+    if (!(target instanceof HTMLImageElement)) return;
+    if (target.naturalHeight <= target.naturalWidth * 1.2) return;
+    event.preventDefault();
+    event.stopPropagation();
+    window.open(target.currentSrc || target.src, "_blank", "noopener");
+};
+
 export default function NotionPage({ recordMap }: NotionPageProps) {
     if (!recordMap) {
         return null;
     }
 
     return (
-        <div className="post-body">
+        <div className="post-body" onClickCapture={openTallImage}>
             <NotionRenderer
                 recordMap={recordMap}
                 fullPage={false}
